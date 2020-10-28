@@ -327,7 +327,7 @@ def removeslice(ctx, sliceid, actor):
 @click.group()
 @click.pass_context
 def show(ctx):
-    """ issue management commands
+    """ issue show commands
     """
     return
 

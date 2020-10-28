@@ -31,6 +31,10 @@ setup(
     include_package_data=True,
     long_description=long_description,
     long_description_content_type="text/markdown",
+    entry_points='''
+    [console_scripts]
+    fabric-mgmt-cli=fabric.managecli.managecli:managecli
+    ''',
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

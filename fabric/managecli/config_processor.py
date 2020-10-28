@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 
 import yaml
+from fabric.actor.core.common.constants import Constants
 
 from fabric.managecli.configuration import Configuration
 from fabric.message_bus.messages.auth_avro import AuthAvro
@@ -177,6 +178,15 @@ class ConfigProcessor:
                 'ssl.key.password': ssl_key_password,
                 'schema.registry.url': schema_registry}
 
+        sasl_username = self.config.get_runtime_config().get_kafka_config().get(Constants.PropertyConfKafkaSaslProducerUsername, None)
+        sasl_password = self.config.get_runtime_config().get_kafka_config().get(Constants.PropertyConfKafkaSaslProducerPassword, None)
+        sasl_mechanism = self.config.get_runtime_config().get_kafka_config().get(Constants.PropertyConfKafkaSaslMechanism, None)
+
+        if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
+            conf['sasl.username'] = sasl_username
+            conf['sasl.password'] = sasl_password
+            conf['sasl.mechanism'] = sasl_mechanism
+
         return conf
 
     def get_kafka_config_consumer(self) -> dict:
@@ -185,6 +195,13 @@ class ConfigProcessor:
 
         conf = self.get_kafka_config_producer()
         conf['auto.offset.reset'] = 'earliest'
+
+        sasl_username = self.config.get_runtime_config().get_kafka_config().get(Constants.PropertyConfKafkaSaslConsumerUsername, None)
+        sasl_password = self.config.get_runtime_config().get_kafka_config().get(Constants.PropertyConfKafkaSaslConsumerPassword, None)
+
+        if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
+            conf['sasl.username'] = sasl_username
+            conf['sasl.password'] = sasl_password
         return conf
 
     def get_kafka_schemas(self):
