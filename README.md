@@ -27,16 +27,17 @@ Ensure that following are installed
 
 ## Installation
 Multiple installation options possible. For CF development the recommended method is to install from GitHub MASTER branch:
-
+```
 $ mkvirtualenv mgmtcli
 $ workon mgmtcli
 $ pip install git+https://github.com/fabric-testbed/ManagementCli.git
-
+```
 For inclusion in tools, etc, use PyPi
+```
 $ mkvirtualenv mgmtcli
 $ workon mgmtcli
 $ pip install fabric-mgmt-cli
-
+```
 ## Configuration
 Management CLI expects the user to set `FABRIC_MGMT_CLI_CONFIG_PATH` environment variable from where `config.yml` to be picked. 
 If the environment variable is not set, it will try to look for `config.yml` in users home directory.
