@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-
+import os
 from fabric.credmgr import swagger_client
 from fabric.credmgr.swagger_client.rest import ApiException as CredMgrException
 
@@ -43,15 +43,14 @@ class CredentialManager(object):
                             "generate fabric tokens!\nSet up the environment variables for FABRIC_ID_TOKEN and " \
                             "FABRIC_REFRESH_TOKEN".format(host))
 
-        print("KOMAL refreshing token")
-
-        return CredentialManager.refresh_token(project_name=project_name, scope=scope, refresh_token=refresh_token,
+        result = CredentialManager.refresh_token(project_name=project_name, scope=scope, refresh_token=refresh_token,
                                                host=host)
+        os.environ['FABRIC_REFRESH_TOKEN'] = result.get('refresh_token')
+        return result
 
     @staticmethod
     def refresh_token(*, project_name: str = 'all', scope: str = 'all', refresh_token: str, host: str):
         try:
-            print("KOMAL refreshing token1")
             # revoke tokens for an user
             configuration = swagger_client.configuration.Configuration()
             configuration.host = host
@@ -59,11 +58,9 @@ class CredentialManager(object):
 
             body = swagger_client.Request(refresh_token)
             tokens_api = swagger_client.TokensApi(api_client=api_instance)
-            print("KOMAL refreshing token2")
             api_response = tokens_api.tokens_refresh_post(body=body,
                                                           project_name=project_name,
                                                           scope=scope)
-            print("KOMAL refreshing token3")
             return api_response.to_dict()
         except CredMgrException as e:
             #traceback.print_exc()
