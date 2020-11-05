@@ -42,6 +42,9 @@ $ pip install fabric-mgmt-cli
 Management CLI expects the user to set `FABRIC_MGMT_CLI_CONFIG_PATH` environment variable from where `config.yml` to be picked. 
 If the environment variable is not set, it will try to look for `config.yml` in users home directory.
 
+In addition, User is expected to pass either Fabric Identity Token or Fabric Refresh Token to all the commands. 
+Alternatively, user is expected to set atleast one of the environment variables `FABRIC_ID_TOKEN` and `FABRIC_REFRESH_TOKEN`.
+
 Create config.yml with default content as shown below. 
 
 User is expected to update the following parameters:

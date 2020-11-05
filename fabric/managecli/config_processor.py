@@ -219,3 +219,6 @@ class ConfigProcessor:
         val_schema = avro.loads(vbytes)
 
         return key_schema, val_schema
+
+    def get_credmgr_host(self) -> str:
+        return self.config.get_auth().get_credmgr_host()

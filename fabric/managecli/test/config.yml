@@ -1,12 +1,12 @@
 runtime:
   - kafka-topic: managecli-topic
-  - kafka-server: broker1:9092
-  - kafka-schema-registry-url: http://schemaregistry:8081
-  - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
-  - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
-  - kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
-  - kafka-ssl-certificate-location:  /etc/fabric/message_bus/ssl/client.pem
-  - kafka-ssl-key-location:  /etc/fabric/message_bus/ssl/client.key
+  - kafka-server: localhost:19092
+  - kafka-schema-registry-url: http://localhost:8081
+  - kafka-key-schema: ./key.avsc
+  - kafka-value-schema: ./message.avsc
+  - kafka-ssl-ca-location:  ./snakeoil-ca-1.crt
+  - kafka-ssl-certificate-location:  ./kafkacat1-ca1-signed.pem
+  - kafka-ssl-key-location:  ./kafkacat1.client.key
   - kafka-ssl-key-password:  fabric
   - kafka-security-protocol: SSL
   - kafka-group-id: fabric-cf
@@ -15,11 +15,10 @@ runtime:
   - kafka-sasl-producer-password:
   - kafka-sasl-consumer-username:
   - kafka-sasl-consumer-password:
-
 logging:
   ## The directory in which actor should create log files.
   ## This directory will be automatically created if it does not exist.
-  - log-directory: /var/log/managecli
+  - log-directory: .
 
   ## The filename to be used for actor's log file.
   - log-file: manage.log

@@ -41,8 +41,11 @@ from fabric.managecli.manage_command import ManageCommand
 from fabric.managecli.show_command import ShowCommand
 import os
 
+from fabric.managecli.tokens import CredentialManager, TokenException
+
+
 class MainShell:
-    PATH = os.environ.get('FABRIC_MGMT_CLI_CONFIG_PATH', '~/.config.yml')
+    PATH = os.environ.get('FABRIC_MGMT_CLI_CONFIG_PATH', './config.yml')
 
     def __init__(self):
         self.config_processor = ConfigProcessor(path=self.PATH)
@@ -158,14 +161,44 @@ class MainShell:
     def get_callback_topic(self) -> str:
         return self.config_processor.get_kafka_topic()
 
-    def start(self):
+    def get_tokens(self, id_token: str, refresh_token: str) -> str:
+        tokens = None
+        if refresh_token is None:
+            refresh_token = os.getenv('FABRIC_REFRESH_TOKEN', None)
+
+        if refresh_token is not None:
+            try:
+                tokens = CredentialManager.get_token(refresh_token=refresh_token,
+                                                     host=self.config_processor.get_credmgr_host())
+                id_token = tokens.get('id_token', None)
+            except Exception as e:
+                raise TokenException('Not a valid refresh_token! Error: {}'.format(e))
+
+        if id_token is None:
+            id_token = os.getenv('FABRIC_ID_TOKEN', None)
+            raise TokenException('Either id_token or refresh_token must be specified! Alternatively, '
+                                 'set the environment variables FABRIC_ID_TOKEN and FABRIC_REFRESH_TOKEN')
+
+        return id_token
+
+    def start(self, id_token: str, refresh_token: str, ignore_tokens: bool = False) -> str:
         try:
             self.initialize()
+            ret_val = None
+            if not ignore_tokens:
+                ret_val = self.get_tokens(id_token=id_token, refresh_token=refresh_token)
             self.message_processor.start()
+            return ret_val
+        except TokenException as e:
+            err_str = traceback.format_exc()
+            self.logger.error(err_str)
+            self.logger.debug("Failed to start Management Shell: {}".format(str(e)))
+            raise e
         except Exception as e:
             err_str = traceback.format_exc()
             self.logger.error(err_str)
             self.logger.debug("Failed to start Management Shell: {}".format(str(e)))
+            raise e
 
     def stop(self):
         try:
@@ -207,6 +240,10 @@ def managecli(ctx, verbose):
 def manage(ctx):
     """ issue management commands
     """
+    config = os.getenv('FABRIC_MGMT_CLI_CONFIG_PATH')
+    if config is None or config == "":
+        ctx.fail('FABRIC_MGMT_CLI_CONFIG_PATH is not set')
+
     return
 
 
@@ -214,165 +251,230 @@ def manage(ctx):
 @click.option('--broker', default=None, help='Broker Name', required=True)
 @click.option('--am', default=None, help='AM Name', required=True)
 @click.option('--rid', default=None, help='Reservation Id', required=False)
+@click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
+@click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def claim(ctx, broker: str, am: str, rid: str):
+def claim(ctx, broker: str, am: str, rid: str, idtoken, refreshtoken):
     """ Claim reservations for am to broker
     """
-    MainShellSingleton.get().start()
-    mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
-    mgmt_command.claim_resources(broker=broker, am=am, callback_topic=MainShellSingleton.get().get_callback_topic(),
-                                 rid=rid)
-    MainShellSingleton.get().stop()
+    try:
+        idtoken = MainShellSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken)
+        mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
+        mgmt_command.claim_resources(broker=broker, am=am, callback_topic=MainShellSingleton.get().get_callback_topic(),
+                                     rid=rid, id_token=idtoken)
+        MainShellSingleton.get().stop()
+    except Exception as e:
+        #traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
 
 
 @manage.command()
 @click.option('--broker', default=None, help='Broker Name', required=True)
 @click.option('--am', default=None, help='AM Name', required=True)
 @click.option('--rid', default=None, help='Reservation Id', required=False)
+@click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
+@click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def reclaim(ctx, broker: str, am: str, rid: str):
+def reclaim(ctx, broker: str, am: str, rid: str, idtoken, refreshtoken):
     """ Claim reservations for am to broker
     """
-    MainShellSingleton.get().start()
-    mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
-    mgmt_command.reclaim_resources(broker=broker, am=am, callback_topic=MainShellSingleton.get().get_callback_topic(),
-                                   rid=rid)
-    MainShellSingleton.get().stop()
+    try:
+        idtoken = MainShellSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken)
+        mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
+        mgmt_command.reclaim_resources(broker=broker, am=am, callback_topic=MainShellSingleton.get().get_callback_topic(),
+                                       rid=rid, id_token=idtoken)
+        MainShellSingleton.get().stop()
+    except Exception as e:
+        # traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
 
 @manage.command()
 @click.option('--broker', default=None, help='Broker Name', required=True)
 @click.option('--am', default=None, help='AM Name', required=True)
 @click.option('--did', default=None, help='Delegation Id', required=False)
+@click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
+@click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def claimdelegation(ctx, broker: str, am: str, did: str):
+def claimdelegation(ctx, broker: str, am: str, did: str, idtoken, refreshtoken):
     """ Claim reservations for am to broker
     """
-    MainShellSingleton.get().start()
-    mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
-    mgmt_command.claim_delegations(broker=broker, am=am, callback_topic=MainShellSingleton.get().get_callback_topic(),
-                                 did=did)
-    MainShellSingleton.get().stop()
-
+    try:
+        idtoken = MainShellSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
+        mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
+        mgmt_command.claim_delegations(broker=broker, am=am, callback_topic=MainShellSingleton.get().get_callback_topic(),
+                                     did=did, id_token=idtoken)
+        MainShellSingleton.get().stop()
+    except Exception as e:
+        # traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
 
 @manage.command()
 @click.option('--broker', default=None, help='Broker Name', required=True)
 @click.option('--am', default=None, help='AM Name', required=True)
 @click.option('--did', default=None, help='Delegation Id', required=False)
+@click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
+@click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def reclaimdelegation(ctx, broker: str, am: str, did: str):
+def reclaimdelegation(ctx, broker: str, am: str, did: str, idtoken, refreshtoken):
     """ Claim reservations for am to broker
     """
-    MainShellSingleton.get().start()
-    mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
-    mgmt_command.reclaim_delegations(broker=broker, am=am, callback_topic=MainShellSingleton.get().get_callback_topic(),
-                                   did=did)
-    MainShellSingleton.get().stop()
+    try:
+        idtoken = MainShellSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken)
+        mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
+        mgmt_command.reclaim_delegations(broker=broker, am=am, callback_topic=MainShellSingleton.get().get_callback_topic(),
+                                       did=did, id_token=idtoken)
+        MainShellSingleton.get().stop()
+    except Exception as e:
+        # traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
 
 @manage.command()
 @click.option('--rid', default=None, help='Reservation Id', required=True)
 @click.option('--actor', default=None, help='Actor Name', required=True)
+@click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
+@click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def closereservation(ctx, rid, actor):
+def closereservation(ctx, rid, actor, idtoken, refreshtoken):
     """ Closes reservation for an actor
     """
-    MainShellSingleton.get().start()
-    mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
-    mgmt_command.close_reservation(rid=rid, actor_name=actor,
-                                   callback_topic=MainShellSingleton.get().get_callback_topic())
-    MainShellSingleton.get().stop()
-
+    try:
+        idtoken = MainShellSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken)
+        mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
+        mgmt_command.close_reservation(rid=rid, actor_name=actor,
+                                       callback_topic=MainShellSingleton.get().get_callback_topic(), id_token=idtoken)
+        MainShellSingleton.get().stop()
+    except Exception as e:
+        # traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
 
 @manage.command()
 @click.option('--sliceid', default=None, help='Slice Id', required=True)
 @click.option('--actor', default=None, help='Actor Name', required=True)
+@click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
+@click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def closeslice(ctx, sliceid, actor):
+def closeslice(ctx, sliceid, actor, idtoken, refreshtoken):
     """ Closes Slice for an actor
     """
-    MainShellSingleton.get().start()
-    mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
-    mgmt_command.close_slice(slice_id=sliceid, actor_name=actor,
-                             callback_topic=MainShellSingleton.get().get_callback_topic())
-    MainShellSingleton.get().stop()
+    try:
+        idtoken = MainShellSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken)
+        mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
+        mgmt_command.close_slice(slice_id=sliceid, actor_name=actor,
+                                 callback_topic=MainShellSingleton.get().get_callback_topic(), id_token=idtoken)
+        MainShellSingleton.get().stop()
+    except Exception as e:
+        # traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
 
 
 @manage.command()
 @click.option('--rid', default=None, help='Reservation Id', required=True)
 @click.option('--actor', default=None, help='Actor Name', required=True)
+@click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
+@click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def removereservation(ctx, rid, actor):
+def removereservation(ctx, rid, actor, idtoken, refreshtoken):
     """ Removes reservation for an actor
     """
-    MainShellSingleton.get().start()
-    mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
-    mgmt_command.remove_reservation(rid=rid, actor_name=actor,
-                                    callback_topic=MainShellSingleton.get().get_callback_topic())
-    MainShellSingleton.get().stop()
+    try:
+        idtoken = MainShellSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken)
+        mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
+        mgmt_command.remove_reservation(rid=rid, actor_name=actor,
+                                        callback_topic=MainShellSingleton.get().get_callback_topic(), id_token=idtoken)
+        MainShellSingleton.get().stop()
+    except Exception as e:
+        # traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
 
 
 @manage.command()
 @click.option('--sliceid', default=None, help='Slice Id', required=True)
 @click.option('--actor', default=None, help='Actor Name', required=True)
+@click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
+@click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def removeslice(ctx, sliceid, actor):
+def removeslice(ctx, sliceid, actor, idtoken, refreshtoken):
     """ Removes slice for an actor
     """
-    MainShellSingleton.get().start()
-    mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
-    mgmt_command.remove_slice(slice_id=sliceid, actor_name=actor,
-                              callback_topic=MainShellSingleton.get().get_callback_topic())
-    MainShellSingleton.get().stop()
-
+    try:
+        idtoken = MainShellSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken)
+        mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
+        mgmt_command.remove_slice(slice_id=sliceid, actor_name=actor,
+                                  callback_topic=MainShellSingleton.get().get_callback_topic(), id_token=idtoken)
+        MainShellSingleton.get().stop()
+    except Exception as e:
+        # traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
 
 @click.group()
 @click.pass_context
 def show(ctx):
     """ issue show commands
     """
+    config = os.getenv('FABRIC_MGMT_CLI_CONFIG_PATH')
+    if config is None or config == "":
+        ctx.fail('FABRIC_MGMT_CLI_CONFIG_PATH is not set')
     return
 
 
 @show.command()
 @click.option('--actor', default=None, help='Actor Name', required=True)
 @click.option('--sliceid', default=None, help='Slice ID', required=False)
+@click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
+@click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def slices(ctx, actor, sliceid):
+def slices(ctx, actor, sliceid, idtoken, refreshtoken):
     """ Get Slices from an actor
     """
-    MainShellSingleton.get().start()
-    mgmt_command = ShowCommand(logger=MainShellSingleton.get().logger)
-    mgmt_command.get_slices(actor_name=actor, callback_topic=MainShellSingleton.get().get_callback_topic(),
-                            slice_id=sliceid)
-    MainShellSingleton.get().stop()
+    try:
+        idtoken = MainShellSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
+        mgmt_command = ShowCommand(logger=MainShellSingleton.get().logger)
+        mgmt_command.get_slices(actor_name=actor, callback_topic=MainShellSingleton.get().get_callback_topic(),
+                                slice_id=sliceid, id_token=idtoken)
+        MainShellSingleton.get().stop()
+    except Exception as e:
+        # traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
+
 
 
 @show.command()
 @click.option('--actor', default=None, help='Actor Name', required=True)
 @click.option('--rid', default=None, help='Reservation Id', required=False)
+@click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
+@click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def reservations(ctx, actor, rid):
+def reservations(ctx, actor, rid, idtoken, refreshtoken):
     """ Get Slices from an actor
     """
-    MainShellSingleton.get().start()
-    mgmt_command = ShowCommand(logger=MainShellSingleton.get().logger)
-    mgmt_command.get_reservations(actor_name=actor, callback_topic=MainShellSingleton.get().get_callback_topic(),
-                                  rid=rid)
-    MainShellSingleton.get().stop()
-
+    try:
+        idtoken = MainShellSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken)
+        mgmt_command = ShowCommand(logger=MainShellSingleton.get().logger)
+        mgmt_command.get_reservations(actor_name=actor, callback_topic=MainShellSingleton.get().get_callback_topic(),
+                                      rid=rid, id_token=idtoken)
+        MainShellSingleton.get().stop()
+    except Exception as e:
+        # traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
 
 @show.command()
 @click.option('--actor', default=None, help='Actor Name', required=True)
 @click.option('--did', default=None, help='Delegation Id', required=False)
+@click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
+@click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def delegations(ctx, actor, did):
+def delegations(ctx, actor, did, idtoken, refreshtoken):
     """ Get Slices from an actor
     """
-    MainShellSingleton.get().start()
-    mgmt_command = ShowCommand(logger=MainShellSingleton.get().logger)
-    mgmt_command.get_delegations(actor_name=actor, callback_topic=MainShellSingleton.get().get_callback_topic(),
-                                 did=did)
-    MainShellSingleton.get().stop()
-
+    try:
+        idtoken = MainShellSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
+        mgmt_command = ShowCommand(logger=MainShellSingleton.get().logger)
+        mgmt_command.get_delegations(actor_name=actor, callback_topic=MainShellSingleton.get().get_callback_topic(),
+                                     did=did, id_token=idtoken)
+        MainShellSingleton.get().stop()
+    except Exception as e:
+        # traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
 
 managecli.add_command(manage)
 managecli.add_command(show)

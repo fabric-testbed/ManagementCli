@@ -119,6 +119,7 @@ class AuthConfig:
     def __init__(self, *, config: list):
         self.name = None
         self.guid = None
+        self.credmgr_host = None
 
         for prop in config:
             for key, value in prop.items():
@@ -126,12 +127,17 @@ class AuthConfig:
                     self.name = value
                 if key.lower() == Constants.Guid:
                     self.guid = value
+                if key.lower() == Constants.CredmgrHost:
+                    self.credmgr_host = value
 
     def get_name(self) -> str:
         return self.name
 
     def get_guid(self) -> str:
         return self.guid
+
+    def get_credmgr_host(self) -> str:
+        return self.credmgr_host
 
 
 class Peer:
