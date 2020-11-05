@@ -45,7 +45,12 @@ class CredentialManager(object):
 
         result = CredentialManager.refresh_token(project_name=project_name, scope=scope, refresh_token=refresh_token,
                                                host=host)
-        os.environ['FABRIC_REFRESH_TOKEN'] = result.get('refresh_token')
+        print()
+        print("NOTE: Please reset your environment variable")
+        cmd = "export FABRIC_REFRESH_TOKEN={}".format(result.get('refresh_token'))
+        print(cmd)
+        print("NOTE: Please reset your environment variable")
+        print()
         return result
 
     @staticmethod
