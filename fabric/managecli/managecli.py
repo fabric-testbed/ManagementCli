@@ -24,9 +24,9 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
-import os
 import threading
 import traceback
+import os
 from logging.handlers import RotatingFileHandler
 
 import click
@@ -39,7 +39,7 @@ from fabric.actor.core.util.id import ID
 from fabric.managecli.config_processor import ConfigProcessor
 from fabric.managecli.manage_command import ManageCommand
 from fabric.managecli.show_command import ShowCommand
-import os
+
 
 from fabric.managecli.tokens import CredentialManager, TokenException
 
@@ -87,15 +87,14 @@ class MainShell:
         peers = self.config_processor.get_peers()
         if peers is not None:
             for p in peers:
-                # TODO Actor Live Check
                 mgmt_actor = None
                 if p.get_type().lower() == ActorType.Broker.name.lower():
-                    mgmt_actor = KafkaBroker(guid=ID(id=p.get_guid()), kafka_topic=p.get_kafka_topic(),
+                    mgmt_actor = KafkaBroker(guid=ID(uid=p.get_guid()), kafka_topic=p.get_kafka_topic(),
                                              auth=self.config_processor.get_auth(),
                                              logger=self.logger, message_processor=self.message_processor,
                                              producer=self.producer)
                 else:
-                    mgmt_actor = KafkaActor(guid=ID(id=p.get_guid()), kafka_topic=p.get_kafka_topic(),
+                    mgmt_actor = KafkaActor(guid=ID(uid=p.get_guid()), kafka_topic=p.get_kafka_topic(),
                                             auth=self.config_processor.get_auth(),
                                             logger=self.logger, message_processor=self.message_processor,
                                             producer=self.producer)
@@ -145,7 +144,8 @@ class MainShell:
         # Set up the root logger
         log = logging.getLogger(self.config_processor.get_log_name())
         log.setLevel(log_level)
-        log_format = '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
+        log_format = \
+            '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
 
         os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
@@ -260,7 +260,8 @@ def claim(ctx, broker: str, am: str, rid: str, idtoken, refreshtoken):
     try:
         idtoken = MainShellSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken)
         mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
-        mgmt_command.claim_resources(broker=broker, am=am, callback_topic=MainShellSingleton.get().get_callback_topic(),
+        mgmt_command.claim_resources(broker=broker, am=am,
+                                     callback_topic=MainShellSingleton.get().get_callback_topic(),
                                      rid=rid, id_token=idtoken)
         MainShellSingleton.get().stop()
     except Exception as e:
@@ -281,7 +282,8 @@ def reclaim(ctx, broker: str, am: str, rid: str, idtoken, refreshtoken):
     try:
         idtoken = MainShellSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken)
         mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
-        mgmt_command.reclaim_resources(broker=broker, am=am, callback_topic=MainShellSingleton.get().get_callback_topic(),
+        mgmt_command.reclaim_resources(broker=broker, am=am,
+                                       callback_topic=MainShellSingleton.get().get_callback_topic(),
                                        rid=rid, id_token=idtoken)
         MainShellSingleton.get().stop()
     except Exception as e:
@@ -301,8 +303,9 @@ def claimdelegation(ctx, broker: str, am: str, did: str, idtoken, refreshtoken):
     try:
         idtoken = MainShellSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
-        mgmt_command.claim_delegations(broker=broker, am=am, callback_topic=MainShellSingleton.get().get_callback_topic(),
-                                     did=did, id_token=idtoken)
+        mgmt_command.claim_delegations(broker=broker, am=am,
+                                       callback_topic=MainShellSingleton.get().get_callback_topic(),
+                                       did=did, id_token=idtoken)
         MainShellSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
@@ -321,8 +324,9 @@ def reclaimdelegation(ctx, broker: str, am: str, did: str, idtoken, refreshtoken
     try:
         idtoken = MainShellSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken)
         mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
-        mgmt_command.reclaim_delegations(broker=broker, am=am, callback_topic=MainShellSingleton.get().get_callback_topic(),
-                                       did=did, id_token=idtoken)
+        mgmt_command.reclaim_delegations(broker=broker, am=am,
+                                         callback_topic=MainShellSingleton.get().get_callback_topic(),
+                                         did=did, id_token=idtoken)
         MainShellSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()

@@ -168,7 +168,8 @@ class ManageCommand(ShowCommand):
             if rid is not None:
                 return actor.reclaim_resources(broker=ID(id=am_guid), rid=ID(id=rid)), actor.get_last_error()
             elif did is None:
-                return actor.reclaim_delegations(broker=ID(id=am_guid), did=did, id_token=id_token), actor.get_last_error()
+                return actor.reclaim_delegations(broker=ID(id=am_guid), did=did, id_token=id_token), \
+                       actor.get_last_error()
             else:
                 raise Exception("Invalid arguments: reservation id and delegation id; both cannot be empty")
         except Exception as e:

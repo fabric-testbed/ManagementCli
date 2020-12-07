@@ -169,23 +169,28 @@ class ConfigProcessor:
         ssl_key_location = self.get_key_location()
         ssl_key_password = self.get_key_password()
 
-        conf = {'bootstrap.servers': bootstrap_server,
-                'security.protocol': security_protocol,
-                'group.id': group_id,
-                'ssl.ca.location': ssl_ca_location,
-                'ssl.certificate.location': ssl_certificate_location,
-                'ssl.key.location': ssl_key_location,
-                'ssl.key.password': ssl_key_password,
-                'schema.registry.url': schema_registry}
+        conf = {Constants.bootstrap_servers: bootstrap_server,
+                Constants.security_protocol: security_protocol,
+                Constants.group_id: group_id,
+                Constants.ssl_ca_location: ssl_ca_location,
+                Constants.ssl_certificate_location: ssl_certificate_location,
+                Constants.ssl_key_location: ssl_key_location,
+                Constants.ssl_key_password: ssl_key_password,
+                Constants.schema_registry_url: schema_registry}
 
-        sasl_username = self.config.get_runtime_config().get_kafka_config().get(Constants.PropertyConfKafkaSaslProducerUsername, None)
-        sasl_password = self.config.get_runtime_config().get_kafka_config().get(Constants.PropertyConfKafkaSaslProducerPassword, None)
-        sasl_mechanism = self.config.get_runtime_config().get_kafka_config().get(Constants.PropertyConfKafkaSaslMechanism, None)
+        sasl_username = self.config.get_runtime_config().get_kafka_config().get(
+            Constants.property_conf_kafka_sasl_producer_username, None)
+
+        sasl_password = self.config.get_runtime_config().get_kafka_config().get(
+            Constants.property_conf_kafka_sasl_producer_password, None)
+
+        sasl_mechanism = self.config.get_runtime_config().get_kafka_config().get(
+            Constants.property_conf_kafka_sasl_mechanism, None)
 
         if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
-            conf['sasl.username'] = sasl_username
-            conf['sasl.password'] = sasl_password
-            conf['sasl.mechanism'] = sasl_mechanism
+            conf[Constants.sasl_username] = sasl_username
+            conf[Constants.sasl_password] = sasl_password
+            conf[Constants.sasl_mechanism] = sasl_mechanism
 
         return conf
 
@@ -196,12 +201,14 @@ class ConfigProcessor:
         conf = self.get_kafka_config_producer()
         conf['auto.offset.reset'] = 'earliest'
 
-        sasl_username = self.config.get_runtime_config().get_kafka_config().get(Constants.PropertyConfKafkaSaslConsumerUsername, None)
-        sasl_password = self.config.get_runtime_config().get_kafka_config().get(Constants.PropertyConfKafkaSaslConsumerPassword, None)
+        sasl_username = self.config.get_runtime_config().get_kafka_config().get(
+            Constants.property_conf_kafka_sasl_consumer_username, None)
+        sasl_password = self.config.get_runtime_config().get_kafka_config().get(
+            Constants.property_conf_kafka_sasl_consumer_password, None)
 
         if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
-            conf['sasl.username'] = sasl_username
-            conf['sasl.password'] = sasl_password
+            conf[Constants.sasl_username] = sasl_username
+            conf[Constants.sasl_password] = sasl_password
         return conf
 
     def get_kafka_schemas(self):

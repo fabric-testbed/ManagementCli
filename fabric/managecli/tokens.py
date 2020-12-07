@@ -23,7 +23,6 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import os
 from fabric.credmgr import swagger_client
 from fabric.credmgr.swagger_client.rest import ApiException as CredMgrException
 

@@ -44,7 +44,7 @@ class ShowCommand(Command):
             self.logger.error(ex_str)
             print("Exception occurred while processing get_slices {}".format(e))
 
-    def do_get_slices(self, *, actor_name: str, callback_topic: str, slice_id: str, id_token: str):
+    def do_get_slices(self, *, actor_name: str, callback_topic: str, slice_id: str = None, id_token: str):
         actor = self.get_actor(actor_name=actor_name)
 
         if actor is None:
@@ -55,11 +55,11 @@ class ShowCommand(Command):
                 return actor.get_slices(id_token=id_token), actor.get_last_error()
             else:
                 slice_list = []
-                slice_obj = actor.get_slice(slice_id=ID(id=slice_id), id_token=id_token)
+                slice_obj = actor.get_slice(slice_id=ID(uid=slice_id), id_token=id_token)
                 if slice_obj is not None:
                     slice_list.append(slice_obj)
                 return slice_list, actor.get_last_error()
-        except Exception as e:
+        except Exception:
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)
         return None, None

@@ -39,37 +39,37 @@ class RuntimeConfig:
         return self.kafka_config
 
     def get_kafka_server(self) -> str:
-        return self.kafka_config.get(Constants.PropertyConfKafkaServer, None)
+        return self.kafka_config.get(Constants.property_conf_kafka_server, None)
 
     def get_kafka_schema_registry(self) -> str:
-        return self.kafka_config.get(Constants.PropertyConfKafkaSchemaRegistry, None)
+        return self.kafka_config.get(Constants.property_conf_kafka_schema_registry, None)
 
     def get_kafka_key_schema(self) -> str:
-        return self.kafka_config.get(Constants.PropertyConfKafkaKeySchema, None)
+        return self.kafka_config.get(Constants.property_conf_kafka_key_schema, None)
 
     def get_kafka_value_schema(self) -> str:
-        return self.kafka_config.get(Constants.PropertyConfKafkaValueSchema, None)
+        return self.kafka_config.get(Constants.property_conf_kafka_value_schema, None)
 
     def get_kafka_topic(self) -> str:
-        return self.kafka_config.get(Constants.KafkaTopic, None)
+        return self.kafka_config.get(Constants.kafka_topic, None)
 
     def get_security_protocol(self) -> str:
-        return self.kafka_config.get(Constants.PropertyConfKafkaSecurityProtocol, None)
+        return self.kafka_config.get(Constants.property_conf_kafka_security_protocol, None)
 
     def get_group_id(self) -> str:
-        return self.kafka_config.get(Constants.PropertyConfKafkaGroupId, None)
+        return self.kafka_config.get(Constants.property_conf_kafka_group_id, None)
 
     def get_ca_location(self) -> str:
-        return self.kafka_config.get(Constants.PropertyConfKafkaSSlCaLocation, None)
+        return self.kafka_config.get(Constants.property_conf_kafka_s_sl_ca_location, None)
 
     def get_cert_location(self) -> str:
-        return self.kafka_config.get(Constants.PropertyConfKafkaSslCertificateLocation, None)
+        return self.kafka_config.get(Constants.property_conf_kafka_ssl_certificate_location, None)
 
     def get_key_location(self) -> str:
-        return self.kafka_config.get(Constants.PropertyConfKafkaSslKeyLocation, None)
+        return self.kafka_config.get(Constants.property_conf_kafka_ssl_key_location, None)
 
     def get_key_password(self) -> str:
-        return self.kafka_config.get(Constants.PropertyConfKafkaSslKeyPassword, None)
+        return self.kafka_config.get(Constants.property_conf_kafka_ssl_key_password, None)
 
 
 class LogConfig:
@@ -83,17 +83,17 @@ class LogConfig:
 
         for prop in config:
             for key, value in prop.items():
-                if key.lower() == Constants.PropertyConfLogDirectory:
+                if key.lower() == Constants.property_conf_log_directory:
                     self.log_dir = value
-                if key.lower() == Constants.PropertyConfLogFile:
+                if key.lower() == Constants.property_conf_log_file:
                     self.log_file = value
-                if key.lower() == Constants.PropertyConfLogLevel:
+                if key.lower() == Constants.property_conf_log_level:
                     self.log_level = value
-                if key.lower() == Constants.PropertyConfLogRetain:
+                if key.lower() == Constants.property_conf_log_retain:
                     self.log_retain = value
-                if key.lower() == Constants.PropertyConfLogSize:
+                if key.lower() == Constants.property_conf_log_size:
                     self.log_size = value
-                if key.lower() == Constants.PropertyConfLogger:
+                if key.lower() == Constants.property_conf_logger:
                     self.log_name = value
 
     def get_log_dir(self) -> str:
@@ -123,11 +123,11 @@ class AuthConfig:
 
         for prop in config:
             for key, value in prop.items():
-                if key.lower() == Constants.Name:
+                if key.lower() == Constants.name:
                     self.name = value
-                if key.lower() == Constants.Guid:
+                if key.lower() == Constants.guid:
                     self.guid = value
-                if key.lower() == Constants.CredmgrHost:
+                if key.lower() == Constants.credmgr_host:
                     self.credmgr_host = value
 
     def get_name(self) -> str:
@@ -148,13 +148,13 @@ class Peer:
         self.kafka_topic = None
         for prop in config:
             for key, value in prop.items():
-                if key == Constants.Name:
+                if key == Constants.name:
                     self.name = value
-                elif key == Constants.Type:
+                elif key == Constants.type:
                     self.type = value
-                elif key == Constants.Guid:
+                elif key == Constants.guid:
                     self.guid = value
-                elif key == Constants.KafkaTopic:
+                elif key == Constants.kafka_topic:
                     self.kafka_topic = value
 
     def get_name(self) -> str:
@@ -172,8 +172,8 @@ class Peer:
 
 class Configuration:
     def __init__(self, config: dict):
-        self.runtime = RuntimeConfig(config=config[Constants.ConfigSectionRuntime])
-        self.logging = LogConfig(config=config[Constants.ConfigLoggingSection])
+        self.runtime = RuntimeConfig(config=config[Constants.config_section_runtime])
+        self.logging = LogConfig(config=config[Constants.config_logging_section])
         self.auth = AuthConfig(config=config['auth'])
         self.peers = []
         if 'peers' in config:
