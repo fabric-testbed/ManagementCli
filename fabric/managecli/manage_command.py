@@ -144,10 +144,10 @@ class ManageCommand(ShowCommand):
         try:
             actor.prepare(callback_topic=callback_topic)
             if rid is not None:
-                res = actor.claim_resources(broker=ID(id=am_guid), rid=ID(id=rid))
+                res = actor.claim_resources(broker=ID(uid=am_guid), rid=ID(uid=rid))
                 return res, actor.get_last_error()
             elif did is not None:
-                dlg = actor.claim_delegations(broker=ID(id=am_guid), did=did, id_token=id_token)
+                dlg = actor.claim_delegations(broker=ID(uid=am_guid), did=did, id_token=id_token)
                 return dlg, actor.get_last_error()
             else:
                 raise Exception("Invalid arguments: reservation id and delegation id; both cannot be empty")
@@ -166,9 +166,9 @@ class ManageCommand(ShowCommand):
         try:
             actor.prepare(callback_topic=callback_topic)
             if rid is not None:
-                return actor.reclaim_resources(broker=ID(id=am_guid), rid=ID(id=rid)), actor.get_last_error()
+                return actor.reclaim_resources(broker=ID(uid=am_guid), rid=ID(uid=rid)), actor.get_last_error()
             elif did is None:
-                return actor.reclaim_delegations(broker=ID(id=am_guid), did=did, id_token=id_token), \
+                return actor.reclaim_delegations(broker=ID(uid=am_guid), did=did, id_token=id_token), \
                        actor.get_last_error()
             else:
                 raise Exception("Invalid arguments: reservation id and delegation id; both cannot be empty")
@@ -183,7 +183,7 @@ class ManageCommand(ShowCommand):
 
         try:
             actor.prepare(callback_topic=callback_topic)
-            return actor.close_reservation(rid=ID(id=rid)), actor.get_last_error()
+            return actor.close_reservation(rid=ID(uid=rid)), actor.get_last_error()
         except Exception as e:
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)
@@ -240,7 +240,7 @@ class ManageCommand(ShowCommand):
 
         try:
             actor.prepare(callback_topic=callback_topic)
-            return actor.remove_reservation(rid=ID(id=rid)), actor.get_last_error()
+            return actor.remove_reservation(rid=ID(uid=rid)), actor.get_last_error()
         except Exception as e:
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)
@@ -264,7 +264,7 @@ class ManageCommand(ShowCommand):
 
         try:
             actor.prepare(callback_topic=callback_topic)
-            return actor.remove_slice(slice_id=ID(id=slice_id)), actor.get_last_error()
+            return actor.remove_slice(slice_id=ID(uid=slice_id)), actor.get_last_error()
         except Exception as e:
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)
