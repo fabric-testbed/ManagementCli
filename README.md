@@ -1,3 +1,5 @@
+[![Requirements Status](https://requires.io/github/fabric-testbed/ManagementCli/requirements.svg?branch=main)](https://requires.io/github/fabric-testbed/ManagementCli/requirements/?branch=main)
+
 # ManagementCli
 Fabric Control Framework Management CLI for administrative operations over Kafka
 
