@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric.message_bus.messages.result_avro import ResultAvro
+from fabric_mb.message_bus.messages.result_avro import ResultAvro
 
 
 class Command:
@@ -40,6 +40,6 @@ class Command:
 
     @staticmethod
     def get_actor(*, actor_name: str):
-        from fabric.managecli.managecli import MainShellSingleton
+        from fabric_mgmt_cli.managecli.managecli import MainShellSingleton
         actor = MainShellSingleton.get().get_mgmt_actor(name=actor_name)
         return actor

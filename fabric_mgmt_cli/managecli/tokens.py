@@ -23,8 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric.credmgr import swagger_client
-from fabric.credmgr.swagger_client.rest import ApiException as CredMgrException
+from fabric_cm.credmgr import swagger_client
+from fabric_cm.credmgr.swagger_client.rest import ApiException as CredMgrException
 
 
 class TokenException(Exception):
@@ -39,7 +39,7 @@ class CredentialManager(object):
 
         if refresh_token is None or refresh_token == "":
             raise Exception("Please visit Credential Manager at {}/ui/ and use POST /tokens/create command to " \
-                            "generate fabric tokens!\nSet up the environment variables for FABRIC_ID_TOKEN and " \
+                            "generate fabric_mgmt_cli tokens!\nSet up the environment variables for FABRIC_ID_TOKEN and " \
                             "FABRIC_REFRESH_TOKEN".format(host))
 
         result = CredentialManager.refresh_token(project_name=project_name, scope=scope, refresh_token=refresh_token,

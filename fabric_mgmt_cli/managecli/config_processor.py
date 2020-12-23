@@ -25,10 +25,10 @@
 # Author: Komal Thareja (kthare10@renci.org)
 
 import yaml
-from fabric.actor.core.common.constants import Constants
+from fabric_cf.actor.core.common.constants import Constants
 
-from fabric.managecli.configuration import Configuration
-from fabric.message_bus.messages.auth_avro import AuthAvro
+from fabric_mgmt_cli.managecli.configuration import Configuration
+from fabric_mb.message_bus.messages.auth_avro import AuthAvro
 
 
 class ConfigProcessor:

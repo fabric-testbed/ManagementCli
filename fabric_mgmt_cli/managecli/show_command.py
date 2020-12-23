@@ -25,8 +25,8 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import traceback
 
-from fabric.actor.core.util.id import ID
-from fabric.managecli.command import Command
+from fabric_cf.actor.core.util.id import ID
+from fabric_mgmt_cli.managecli.command import Command
 
 
 class ShowCommand(Command):

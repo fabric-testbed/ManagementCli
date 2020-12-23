@@ -25,13 +25,13 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import unittest
 
-from fabric.managecli.manage_command import ManageCommand
-from fabric.managecli.managecli import MainShellSingleton
+from fabric_mgmt_cli.managecli.manage_command import ManageCommand
+from fabric_mgmt_cli.managecli.managecli import MainShellSingleton
 
 
 class ManageCommandTest(unittest.TestCase):
-    broker = "fabric-broker"
-    am = "fabric-site-am"
+    broker = "fabric_mgmt_cli-broker"
+    am = "fabric_mgmt_cli-site-am"
     def test_claim(self):
         MainShellSingleton.get().start()
         mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)

@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 NAME = "fabric-mgmt-cli"
-VERSION = "0.3"
+VERSION = "0.4"
 # To install the library, run the following
 #
 # python setup.py install
@@ -33,7 +33,7 @@ setup(
     long_description_content_type="text/markdown",
     entry_points='''
     [console_scripts]
-    fabric-mgmt-cli=fabric.managecli.managecli:managecli
+    fabric_mgmt_cli-mgmt-cli=fabric_mgmt_cli.managecli.managecli:managecli
     ''',
     classifiers=[
         "Programming Language :: Python :: 3",

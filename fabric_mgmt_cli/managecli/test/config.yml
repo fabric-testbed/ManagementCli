@@ -7,9 +7,9 @@ runtime:
   - kafka-ssl-ca-location:  ./snakeoil-ca-1.crt
   - kafka-ssl-certificate-location:  ./kafkacat1-ca1-signed.pem
   - kafka-ssl-key-location:  ./kafkacat1.client.key
-  - kafka-ssl-key-password:  fabric
+  - kafka-ssl-key-password:  fabric_mgmt_cli
   - kafka-security-protocol: SSL
-  - kafka-group-id: fabric-cf
+  - kafka-group-id: fabric_mgmt_cli-cf
   - kafka-sasl-mechanism:
   - kafka-sasl-producer-username:
   - kafka-sasl-producer-password:
@@ -37,7 +37,7 @@ logging:
 auth:
   - name: managecli
   - guid: managecli-guid
-  - credmgr-host: https://dev-2.fabric-testbed.net:7000/
+  - credmgr-host: https://dev-2.fabric_mgmt_cli-testbed.net:7000/
 
 peers:
   - peer:

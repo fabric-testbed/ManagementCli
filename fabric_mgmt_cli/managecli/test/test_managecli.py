@@ -26,7 +26,7 @@
 import unittest
 
 from click.testing import CliRunner
-from fabric.managecli import managecli
+from fabric_mgmt_cli.managecli import managecli
 import os
 
 

@@ -31,17 +31,17 @@ from logging.handlers import RotatingFileHandler
 
 import click
 
-from fabric.actor.core.apis.i_actor import ActorType
-from fabric.actor.core.manage.kafka.kafka_actor import KafkaActor
-from fabric.actor.core.manage.kafka.kafka_broker import KafkaBroker
-from fabric.actor.core.manage.kafka.kafka_mgmt_message_processor import KafkaMgmtMessageProcessor
-from fabric.actor.core.util.id import ID
-from fabric.managecli.config_processor import ConfigProcessor
-from fabric.managecli.manage_command import ManageCommand
-from fabric.managecli.show_command import ShowCommand
+from fabric_cf.actor.core.apis.i_actor import ActorType
+from fabric_cf.actor.core.manage.kafka.kafka_actor import KafkaActor
+from fabric_cf.actor.core.manage.kafka.kafka_broker import KafkaBroker
+from fabric_cf.actor.core.manage.kafka.kafka_mgmt_message_processor import KafkaMgmtMessageProcessor
+from fabric_cf.actor.core.util.id import ID
+from fabric_mgmt_cli.managecli.config_processor import ConfigProcessor
+from fabric_mgmt_cli.managecli.manage_command import ManageCommand
+from fabric_mgmt_cli.managecli.show_command import ShowCommand
 
 
-from fabric.managecli.tokens import CredentialManager, TokenException
+from fabric_mgmt_cli.managecli.tokens import CredentialManager, TokenException
 
 
 class MainShell:
@@ -64,7 +64,7 @@ class MainShell:
         self.key_schema = key_schema
         self.val_schema = val_schema
 
-        from fabric.message_bus.producer import AvroProducerApi
+        from fabric_mb.message_bus.producer import AvroProducerApi
         self.producer = AvroProducerApi(conf=conf, key_schema=key_schema, record_schema=val_schema, logger=self.logger)
 
         consumer_conf = self.config_processor.get_kafka_config_consumer()
