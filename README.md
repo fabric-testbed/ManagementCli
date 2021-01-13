@@ -1,5 +1,7 @@
 [![Requirements Status](https://requires.io/github/fabric-testbed/ManagementCli/requirements.svg?branch=main)](https://requires.io/github/fabric-testbed/ManagementCli/requirements/?branch=main)
 
+[![PyPI](https://img.shields.io/pypi/v/fabric-mgmt-cli?style=plastic)](https://pypi.org/project/fabric-mgmt-cli/)
+
 # ManagementCli
 Fabric Control Framework Management CLI for administrative operations over Kafka
 
