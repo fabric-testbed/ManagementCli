@@ -61,3 +61,9 @@ peers:
       - guid: broker-guid
       - type: broker
       - kafka-topic: broker-topic
+
+net:
+  - url: https://localhost/restconf/data
+  - username: admin
+  - password: password
+  - validate_certs: False

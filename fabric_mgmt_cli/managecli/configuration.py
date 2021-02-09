@@ -170,11 +170,43 @@ class Peer:
         return self.kafka_topic
 
 
+class NetConfig:
+    def __init__(self, *, config: list):
+        self.url = None
+        self.username = None
+        self.password = None
+        self.validate_certs = None
+
+        for prop in config:
+            for key, value in prop.items():
+                if key == "url":
+                    self.url = value
+                elif key == "username":
+                    self.username = value
+                elif key == "password":
+                    self.password = value
+                elif key == "validate_certs":
+                    self.validate_certs = value
+
+    def get_url(self) -> str:
+        return self.url
+
+    def get_username(self) -> str:
+        return self.username
+
+    def get_password(self) -> str:
+        return self.password
+
+    def get_validate_certs(self) -> bool:
+        return self.validate_certs
+
+
 class Configuration:
     def __init__(self, config: dict):
         self.runtime = RuntimeConfig(config=config[Constants.CONFIG_SECTION_RUNTIME])
         self.logging = LogConfig(config=config[Constants.CONFIG_LOGGING_SECTION])
         self.auth = AuthConfig(config=config['auth'])
+        self.net = NetConfig(config=config['net'])
         self.peers = []
         if 'peers' in config:
             for e in config['peers']:
@@ -191,3 +223,6 @@ class Configuration:
 
     def get_logging(self) -> LogConfig:
         return self.logging
+
+    def get_net(self) -> NetConfig:
+        return self.net
