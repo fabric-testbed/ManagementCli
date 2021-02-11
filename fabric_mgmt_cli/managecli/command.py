@@ -23,10 +23,14 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from fabric_cf.actor.core.manage.kafka.kafka_actor import KafkaActor
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 
 
 class Command:
+    """
+    Base class for varios commands
+    """
     def __init__(self, *, logger):
         self.logger = logger
 
@@ -39,7 +43,7 @@ class Command:
             print("Details={}".format(status.details))
 
     @staticmethod
-    def get_actor(*, actor_name: str):
-        from fabric_mgmt_cli.managecli.managecli import MainShellSingleton
-        actor = MainShellSingleton.get().get_mgmt_actor(name=actor_name)
+    def get_actor(*, actor_name: str) -> KafkaActor:
+        from fabric_mgmt_cli.managecli.managecli import KafkaProcessorSingleton
+        actor = KafkaProcessorSingleton.get().get_mgmt_actor(name=actor_name)
         return actor

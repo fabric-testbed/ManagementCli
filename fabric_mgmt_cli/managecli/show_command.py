@@ -122,7 +122,7 @@ class ShowCommand(Command):
                 return actor.get_delegations(id_token=id_token), actor.get_last_error()
             else:
                 rid_list = []
-                r = actor.get_delegation(did=did, id_token=id_token)
+                r = actor.get_delegations(delegation_id=did, id_token=id_token)
                 if r is not None:
                     rid_list.append(r)
                 return rid_list, actor.get_last_error()

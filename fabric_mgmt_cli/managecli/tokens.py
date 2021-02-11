@@ -38,9 +38,9 @@ class CredentialManager(object):
             raise Exception("Missing Credential Manager Host")
 
         if refresh_token is None or refresh_token == "":
-            raise Exception("Please visit Credential Manager at {}/ui/ and use POST /tokens/create command to " \
-                            "generate fabric_mgmt_cli tokens!\nSet up the environment variables for FABRIC_ID_TOKEN and " \
-                            "FABRIC_REFRESH_TOKEN".format(host))
+            raise Exception(f"Please visit Credential Manager at {host}/ui/ and use POST /tokens/create command to "
+                            f"generate fabric_mgmt_cli tokens!\nSet up the environment variables for FABRIC_ID_TOKEN "
+                            f"and FABRIC_REFRESH_TOKEN")
 
         result = CredentialManager.refresh_token(project_name=project_name, scope=scope, refresh_token=refresh_token,
                                                host=host)

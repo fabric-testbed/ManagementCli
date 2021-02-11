@@ -38,7 +38,7 @@ logging:
 auth:
   - name: managecli
   - guid: managecli-guid
-  - credmgr-host: https://dev-2.fabric_mgmt_cli-testbed.net:7000/
+  - credmgr-host: https://dev-2.fabric_mgmt_cli-testbed.net/
 
 peers:
   - peer:

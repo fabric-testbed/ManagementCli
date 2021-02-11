@@ -32,9 +32,13 @@ from fabric_mb.message_bus.messages.auth_avro import AuthAvro
 
 
 class ConfigProcessor:
+    """
+    Configuration Processor to read and load config
+    """
     def __init__(self, *, path: str = None):
         self.path = path
         self.config = None
+        self.auth = None
 
     def process(self, *, config: Configuration = None):
         if config is None:
@@ -169,28 +173,28 @@ class ConfigProcessor:
         ssl_key_location = self.get_key_location()
         ssl_key_password = self.get_key_password()
 
-        conf = {Constants.bootstrap_servers: bootstrap_server,
-                Constants.security_protocol: security_protocol,
-                Constants.group_id: group_id,
-                Constants.ssl_ca_location: ssl_ca_location,
-                Constants.ssl_certificate_location: ssl_certificate_location,
-                Constants.ssl_key_location: ssl_key_location,
-                Constants.ssl_key_password: ssl_key_password,
-                Constants.schema_registry_url: schema_registry}
+        conf = {Constants.BOOTSTRAP_SERVERS: bootstrap_server,
+                Constants.SECURITY_PROTOCOL: security_protocol,
+                Constants.GROUP_ID: group_id,
+                Constants.SSL_CA_LOCATION: ssl_ca_location,
+                Constants.SSL_CERTIFICATE_LOCATION: ssl_certificate_location,
+                Constants.SSL_KEY_LOCATION: ssl_key_location,
+                Constants.SSL_KEY_PASSWORD: ssl_key_password,
+                Constants.SCHEMA_REGISTRY_URL: schema_registry}
 
         sasl_username = self.config.get_runtime_config().get_kafka_config().get(
-            Constants.property_conf_kafka_sasl_producer_username, None)
+            Constants.PROPERTY_CONF_KAFKA_SASL_PRODUCER_USERNAME, None)
 
         sasl_password = self.config.get_runtime_config().get_kafka_config().get(
-            Constants.property_conf_kafka_sasl_producer_password, None)
+            Constants.PROPERTY_CONF_KAFKA_SASL_PRODUCER_PASSWORD, None)
 
         sasl_mechanism = self.config.get_runtime_config().get_kafka_config().get(
-            Constants.property_conf_kafka_sasl_mechanism, None)
+            Constants.PROPERTY_CONF_KAFKA_SASL_MECHANISM, None)
 
         if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
-            conf[Constants.sasl_username] = sasl_username
-            conf[Constants.sasl_password] = sasl_password
-            conf[Constants.sasl_mechanism] = sasl_mechanism
+            conf[Constants.SASL_USERNAME] = sasl_username
+            conf[Constants.SASL_PASSWORD] = sasl_password
+            conf[Constants.SASL_MECHANISM] = sasl_mechanism
 
         return conf
 
@@ -202,13 +206,13 @@ class ConfigProcessor:
         conf['auto.offset.reset'] = 'earliest'
 
         sasl_username = self.config.get_runtime_config().get_kafka_config().get(
-            Constants.property_conf_kafka_sasl_consumer_username, None)
+            Constants.PROPERTY_CONF_KAFKA_SASL_CONSUMER_USERNAME, None)
         sasl_password = self.config.get_runtime_config().get_kafka_config().get(
-            Constants.property_conf_kafka_sasl_consumer_password, None)
+            Constants.PROPERTY_CONF_KAFKA_SASL_CONSUMER_PASSWORD, None)
 
         if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
-            conf[Constants.sasl_username] = sasl_username
-            conf[Constants.sasl_password] = sasl_password
+            conf[Constants.SASL_USERNAME] = sasl_username
+            conf[Constants.SASL_PASSWORD] = sasl_password
         return conf
 
     def get_kafka_schemas(self):
