@@ -11,15 +11,15 @@ Below is the list of the operations supported so far
 
 Command | SubCommand | Action | Input | Output
 :--------|:----:|:----:|:---:|:---:
-`manage` | `claimdelegeation`| Claim Delegation(s) from AM by Broker | `broker` Broker, `am` Aggregate Manager, `did` [Delegation Id] | Delegation Id of delegation claimed
-`manage` | `reclaimdelegeation`| Reclaim Delegation(s) from AM by Broker | `broker` Broker, `am` Aggregate Manager, `did` [Delegation Id] | Delegation Id of delegation reclaimed
-`manage` | `closeslice` | Close Slice for a CF Actor |  `actor` Actor, `sliceid` [Slice Id] | Success or Failure status
-`manage` | `closereservation` | Close Reservation for a CF Actor |  `actor` Actor, `rid` [Reservation Id] | Success or Failure status
-`manage` | `removeslice` | Remove Slice for a CF Actor |  `actor` Actor, `sliceid` [Slice Id] | Success or Failure status
-`manage` | `removereservation` | Remove Reservation for a CF Actor |  `actor` Actor, `rid` [Reservation Id] | Success or Failure status
-`show` | `slices`| Show Slice(s) for a CF Actor | `actor` Actor, `sliceid` [Slice Id] | Slices for an actor or Slice identified by Slice Id
-`show` | `reservations`| Show Reservation(s) for a CF Actor | `actor` Actor, `rid` [Reservation Id] | Reservations for an actor or Reservation identified by Reservation Id
-`show` | `delegations`| Show Delegation(s) for a CF Actor | `actor` Actor, `did` [Delegation Id] | Delegations for an actor or Delegation identified by Delegation Id
+`delegations` | `claim`| Claim delegation(s) from AM to Broker | `broker` Broker, `am` Aggregate Manager, `did` [Delegation Id] | Delegation Id of delegation claimed
+`delegations` | `reclaim`| Reclaim delegation(s) from Broker to AM | `broker` Broker, `am` Aggregate Manager, `did` [Delegation Id] | Delegation Id of delegation reclaimed
+`delegations` | `query`| Get delegation(s) from an actor | `actor` Actor, `did` [Delegation Id] | Delegations for an actor or Delegation identified by Delegation Id
+`slices` | `close` | Closes slice for an actor |  `actor` Actor, `sliceid` [Slice Id] | Success or Failure status
+`slices` | `remove` | Removes slice for an actor |  `actor` Actor, `sliceid` [Slice Id] | Success or Failure status
+`slices` | `query`| Get slice(s) from an actor | `actor` Actor, `sliceid` [Slice Id] | Slices for an actor or Slice identified by Slice Id
+`slivers` | `remove` | Closes sliver for an actor |  `actor` Actor, `sliverid` [Sliver Id] | Success or Failure status
+`slivers` | `close` | Removes sliver for an actor |  `actor` Actor, `sliverid` [Sliver Id] | Success or Failure status
+`slivers` | `query`| Get sliver(s) from an actor | `actor` Actor, `sliverid` [Sliver Id] | Reservations for an actor or Sliver identified by Sliver Id
 
 ## Requirements
 Python 3.7+

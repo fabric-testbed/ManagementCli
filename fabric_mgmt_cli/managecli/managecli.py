@@ -125,18 +125,18 @@ def slivers(ctx):
 
 
 @slivers.command()
-@click.option('--rid', default=None, help='Reservation Id', required=True)
+@click.option('--sliverid', default=None, help='Sliver Id', required=True)
 @click.option('--actor', default=None, help='Actor Name', required=True)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def close(ctx, rid, actor, idtoken, refreshtoken):
+def close(ctx, sliverid, actor, idtoken, refreshtoken):
     """ Closes sliver for an actor
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken)
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
-        mgmt_command.close_reservation(rid=rid, actor_name=actor,
+        mgmt_command.close_reservation(rid=sliverid, actor_name=actor,
                                        callback_topic=KafkaProcessorSingleton.get().get_callback_topic(), id_token=idtoken)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
@@ -145,18 +145,18 @@ def close(ctx, rid, actor, idtoken, refreshtoken):
 
 
 @slivers.command()
-@click.option('--rid', default=None, help='Reservation Id', required=True)
+@click.option('--sliverid', default=None, help='Sliver Id', required=True)
 @click.option('--actor', default=None, help='Actor Name', required=True)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def remove(ctx, rid, actor, idtoken, refreshtoken):
+def remove(ctx, sliverid, actor, idtoken, refreshtoken):
     """ Removes sliver for an actor
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken)
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
-        mgmt_command.remove_reservation(rid=rid, actor_name=actor,
+        mgmt_command.remove_reservation(rid=sliverid, actor_name=actor,
                                         callback_topic=KafkaProcessorSingleton.get().get_callback_topic(), id_token=idtoken)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
@@ -166,18 +166,18 @@ def remove(ctx, rid, actor, idtoken, refreshtoken):
 
 @slivers.command()
 @click.option('--actor', default=None, help='Actor Name', required=True)
-@click.option('--rid', default=None, help='Reservation Id', required=False)
+@click.option('--sliverid', default=None, help='Sliver Id', required=False)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def query(ctx, actor, rid, idtoken, refreshtoken):
+def query(ctx, actor, sliverid, idtoken, refreshtoken):
     """ Get sliver(s) from an actor
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken)
         mgmt_command = ShowCommand(logger=KafkaProcessorSingleton.get().logger)
         mgmt_command.get_reservations(actor_name=actor, callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                                      rid=rid, id_token=idtoken)
+                                      rid=sliverid, id_token=idtoken)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
