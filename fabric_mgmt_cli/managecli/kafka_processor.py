@@ -34,9 +34,13 @@ from fabric_cf.actor.core.manage.kafka.kafka_actor import KafkaActor
 from fabric_cf.actor.core.manage.kafka.kafka_broker import KafkaBroker
 from fabric_cf.actor.core.manage.kafka.kafka_mgmt_message_processor import KafkaMgmtMessageProcessor
 from fabric_cf.actor.core.util.id import ID
+from fabric_cm.credmgr.credmgr_proxy import CredmgrProxy
 
 from fabric_mgmt_cli.managecli.config_processor import ConfigProcessor
-from fabric_mgmt_cli.managecli.tokens import CredentialManager, TokenException
+
+
+class TokenException(Exception):
+    pass
 
 
 class KafkaProcessor:
@@ -187,8 +191,8 @@ class KafkaProcessor:
 
         if refresh_token is not None:
             try:
-                tokens = CredentialManager.get_token(refresh_token=refresh_token,
-                                                     host=self.config_processor.get_credmgr_host())
+                proxy = CredmgrProxy(credmgr_host=self.config_processor.get_credmgr_host())
+                tokens = proxy.refresh(project_name="all", scope="all", refresh_token=refresh_token)
                 id_token = tokens.get('id_token', None)
             except Exception as e:
                 raise TokenException('Not a valid refresh_token! Error: {}'.format(e))
