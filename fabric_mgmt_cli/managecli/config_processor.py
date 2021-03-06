@@ -167,7 +167,6 @@ class ConfigProcessor:
         bootstrap_server = self.get_kafka_server()
         schema_registry = self.get_kafka_schema_registry()
         security_protocol = self.get_security_protocol()
-        group_id = self.get_group_id()
         ssl_ca_location = self.get_ca_location()
         ssl_certificate_location = self.get_cert_location()
         ssl_key_location = self.get_key_location()
@@ -175,7 +174,6 @@ class ConfigProcessor:
 
         conf = {Constants.BOOTSTRAP_SERVERS: bootstrap_server,
                 Constants.SECURITY_PROTOCOL: security_protocol,
-                Constants.GROUP_ID: group_id,
                 Constants.SSL_CA_LOCATION: ssl_ca_location,
                 Constants.SSL_CERTIFICATE_LOCATION: ssl_certificate_location,
                 Constants.SSL_KEY_LOCATION: ssl_key_location,
@@ -204,6 +202,9 @@ class ConfigProcessor:
 
         conf = self.get_kafka_config_producer()
         conf['auto.offset.reset'] = 'earliest'
+
+        group_id = self.get_group_id()
+        conf[Constants.GROUP_ID] = group_id
 
         sasl_username = self.config.get_runtime_config().get_kafka_config().get(
             Constants.PROPERTY_CONF_KAFKA_SASL_CONSUMER_USERNAME, None)
