@@ -62,7 +62,7 @@ def close(ctx, sliceid, actor, idtoken, refreshtoken):
     """ Closes slice for an actor
     """
     try:
-        idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken)
+        idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
         mgmt_command.close_slice(slice_id=sliceid, actor_name=actor,
                                  callback_topic=KafkaProcessorSingleton.get().get_callback_topic(), id_token=idtoken)
@@ -82,7 +82,7 @@ def remove(ctx, sliceid, actor, idtoken, refreshtoken):
     """ Removes slice for an actor
     """
     try:
-        idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken)
+        idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
         mgmt_command.remove_slice(slice_id=sliceid, actor_name=actor,
                                   callback_topic=KafkaProcessorSingleton.get().get_callback_topic(), id_token=idtoken)
@@ -134,7 +134,7 @@ def close(ctx, sliverid, actor, idtoken, refreshtoken):
     """ Closes sliver for an actor
     """
     try:
-        idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken)
+        idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
         mgmt_command.close_reservation(rid=sliverid, actor_name=actor,
                                        callback_topic=KafkaProcessorSingleton.get().get_callback_topic(), id_token=idtoken)
@@ -154,7 +154,7 @@ def remove(ctx, sliverid, actor, idtoken, refreshtoken):
     """ Removes sliver for an actor
     """
     try:
-        idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken)
+        idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
         mgmt_command.remove_reservation(rid=sliverid, actor_name=actor,
                                         callback_topic=KafkaProcessorSingleton.get().get_callback_topic(), id_token=idtoken)
@@ -174,7 +174,7 @@ def query(ctx, actor, sliverid, idtoken, refreshtoken):
     """ Get sliver(s) from an actor
     """
     try:
-        idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken)
+        idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ShowCommand(logger=KafkaProcessorSingleton.get().logger)
         mgmt_command.get_reservations(actor_name=actor, callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
                                       rid=sliverid, id_token=idtoken)
@@ -229,7 +229,7 @@ def reclaim(ctx, broker: str, am: str, did: str, idtoken, refreshtoken):
     """ Reclaim delegation(s) from Broker to AM
     """
     try:
-        idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken)
+        idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
         mgmt_command.reclaim_delegations(broker=broker, am=am,
                                          callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
