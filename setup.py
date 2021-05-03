@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 NAME = "fabric-mgmt-cli"
-VERSION = "0.7"
+VERSION = "0.8"
 # To install the library, run the following
 #
 # python setup.py install

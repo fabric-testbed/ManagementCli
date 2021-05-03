@@ -50,7 +50,10 @@ class ManageCommand(ShowCommand):
 
         try:
             actor.prepare(callback_topic=callback_topic)
-            return actor.close_reservation(rid=ID(uid=rid)), actor.get_last_error()
+            reservation_id = None
+            if rid is not None:
+                reservation_id = ID(uid=rid)
+            return actor.close_reservation(rid=reservation_id, id_token=id_token), actor.get_last_error()
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())
@@ -91,7 +94,7 @@ class ManageCommand(ShowCommand):
 
         try:
             actor.prepare(callback_topic=callback_topic)
-            return actor.close_reservations(slice_id=slice_id), actor.get_last_error()
+            return actor.close_reservations(slice_id=slice_id, id_token=id_token), actor.get_last_error()
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())
@@ -107,7 +110,10 @@ class ManageCommand(ShowCommand):
         @param id_token identity token
         """
         try:
-            result, error = self.do_close_slice(slice_id=ID(uid=slice_id), actor_name=actor_name,
+            sid = None
+            if slice_id is not None:
+                sid = ID(uid=slice_id)
+            result, error = self.do_close_slice(slice_id=sid, actor_name=actor_name,
                                                 callback_topic=callback_topic, id_token=id_token)
             print(result)
             if result is False:
@@ -132,7 +138,10 @@ class ManageCommand(ShowCommand):
 
         try:
             actor.prepare(callback_topic=callback_topic)
-            return actor.remove_reservation(rid=ID(uid=rid)), actor.get_last_error()
+            reservation_id = None
+            if rid is not None:
+                reservation_id = ID(uid=rid)
+            return actor.remove_reservation(rid=reservation_id, id_token=id_token), actor.get_last_error()
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())
@@ -172,7 +181,10 @@ class ManageCommand(ShowCommand):
 
         try:
             actor.prepare(callback_topic=callback_topic)
-            return actor.remove_slice(slice_id=ID(uid=slice_id)), actor.get_last_error()
+            sid = None
+            if slice_id is not None:
+                sid = ID(uid=slice_id)
+            return actor.remove_slice(slice_id=sid, id_token=id_token), actor.get_last_error()
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())
@@ -196,8 +208,8 @@ class ManageCommand(ShowCommand):
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())
 
-    def do_claim_resources(self, *, broker: str, am_guid: ID, callback_topic: str, id_token: str,
-                           did: str) -> Tuple[DelegationAvro, Error]:
+    def do_claim_delegations(self, *, broker: str, am_guid: ID, callback_topic: str, id_token: str = None,
+                             did: str = None) -> Tuple[DelegationAvro, Error]:
         """
         Claim delegations by invoking Management Actor Claim Delegations API
         @param broker broker guid
@@ -222,7 +234,7 @@ class ManageCommand(ShowCommand):
 
         return None, actor.get_last_error()
 
-    def claim_delegations(self, *, broker: str, am: str, callback_topic: str, did: str, id_token: str):
+    def claim_delegations(self, *, broker: str, am: str, callback_topic: str, did: str = None, id_token: str = None):
         """
         Claim delegations
         @param broker broker name
@@ -239,19 +251,6 @@ class ManageCommand(ShowCommand):
                 raise Exception("Invalid arguments am_actor {} or broker_actor {} not found".format(am_actor,
                                                                                                     broker_actor))
 
-            broker_slice_id_list = []
-            if did is None:
-                slices, error = self.do_get_slices(actor_name=am, callback_topic=callback_topic, slice_id=None,
-                                                   id_token=id_token)
-                if slices is None:
-                    print("Error occurred while getting slices for actor: {}".format(am))
-                    self.print_result(status=error.get_status())
-                    return
-
-                for s in slices:
-                    if s.get_slice_name() == broker:
-                        broker_slice_id_list.append(s.get_slice_id())
-
             delegations, error = self.do_get_delegations(actor_name=am, callback_topic=callback_topic, did=did,
                                                          id_token=id_token)
             if delegations is None:
@@ -263,23 +262,28 @@ class ManageCommand(ShowCommand):
                 print("No delegations to be claimed from {} by {}:".format(am, broker))
                 return
 
+            claimed = False
             for d in delegations:
-                print("Claiming Delegation# {}".format(d.get_delegation_id()))
-                delegation, error = self.do_claim_resources(broker=broker, am_guid=am_actor.get_guid(),
-                                                             did=d.get_delegation_id(), callback_topic=callback_topic,
-                                                            id_token=id_token)
-                if delegation is not None:
-                    print("Delegation claimed: {} ".format(delegation.get_delegation_id()))
-                else:
-                    self.print_result(status=error.get_status())
+                if d.get_slice_object().get_slice_name() == broker:
+                    print("Claiming Delegation# {}".format(d.get_delegation_id()))
+                    delegation, error = self.do_claim_delegations(broker=broker, am_guid=am_actor.get_guid(),
+                                                                  did=d.get_delegation_id(), callback_topic=callback_topic,
+                                                                  id_token=id_token)
+                    claimed = True
+                    if delegation is not None:
+                        print("Delegation claimed: {} ".format(delegation.get_delegation_id()))
+                    else:
+                        self.print_result(status=error.get_status())
+            if not claimed:
+                print(f"No delegations found for Broker# {broker}")
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())
 
-    def do_reclaim_resources(self, *, broker: str, am_guid: ID, callback_topic: str, id_token: str,
-                             did: str = None) -> Tuple[DelegationAvro, Error]:
+    def do_reclaim_delegations(self, *, broker: str, am_guid: ID, callback_topic: str, id_token: str = None,
+                               did: str = None) -> Tuple[DelegationAvro, Error]:
         """
-        ReClaim delegations by invoking Management Actor ReClaim Delegations API
+        Reclaim delegations by invoking Management Actor Claim Delegations API
         @param broker broker guid
         @param am_guid am guid
         @param callback_topic callback topic
@@ -293,17 +297,18 @@ class ManageCommand(ShowCommand):
             raise Exception("Invalid arguments actor {} not found".format(broker))
         try:
             actor.prepare(callback_topic=callback_topic)
-            return actor.reclaim_delegations(broker=am_guid, did=did, id_token=id_token), \
-                   actor.get_last_error()
+
+            dlg = actor.reclaim_delegations(broker=am_guid, did=did, id_token=id_token)
+            return dlg, actor.get_last_error()
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())
 
         return None, actor.get_last_error()
 
-    def reclaim_delegations(self, *, broker: str, am: str, callback_topic: str, did: str, id_token: str):
+    def reclaim_delegations(self, *, broker: str, am: str, callback_topic: str, did: str = None, id_token: str = None):
         """
-        ReClaim delegations
+        Claim delegations
         @param broker broker name
         @param am am name
         @param callback_topic callback topic
@@ -318,35 +323,32 @@ class ManageCommand(ShowCommand):
                 raise Exception("Invalid arguments am_actor {} or broker_actor {} not found".format(am_actor,
                                                                                                     broker_actor))
 
-            reclaim_rid_list = {}
-            broker_slice_id_list = []
-            if did is None:
-                slices, error = self.do_get_slices(actor_name=am, callback_topic=callback_topic, slice_id=None,
-                                                   id_token=id_token)
-                if slices is None:
-                    print("Error occurred while getting slices for actor: {}".format(am))
-                    self.print_result(status=error.get_status())
-                    return
-
-                for s in slices:
-                    if s.get_slice_name() == broker:
-                        broker_slice_id_list.append(s.get_slice_id())
-
             delegations, error = self.do_get_delegations(actor_name=am, callback_topic=callback_topic, did=did,
                                                          id_token=id_token)
-            if delegations is None or len(reclaim_rid_list) == 0:
-                print("No delegations to be claimed from {} by {}:".format(am, broker))
+            if delegations is None:
+                print("Error occurred while getting delegations for actor: {}".format(am))
+                self.print_result(status=error.get_status())
                 return
 
+            if delegations is None or len(delegations) == 0:
+                print("No delegations to be reclaimed from {} by {}:".format(am, broker))
+                return
+
+            claimed = False
             for d in delegations:
-                print("Reclaiming Delegation# {}".format(d.get_delegation_id()))
-                delegation, error = self.do_reclaim_resources(broker=broker, am_guid=am_actor.get_guid(),
-                                                              did=d.get_delegation_id(), callback_topic=callback_topic,
-                                                              id_token=id_token)
-                if delegation is not None:
-                    print("Delegation reclaimed: {} ".format(delegation.get_delegation_id()))
-                else:
-                    self.print_result(status=error.get_status())
+                if d.get_slice_object().get_slice_name() == broker:
+                    print("Reclaiming Delegation# {}".format(d.get_delegation_id()))
+                    delegation, error = self.do_reclaim_delegations(broker=broker, am_guid=am_actor.get_guid(),
+                                                                    did=d.get_delegation_id(),
+                                                                    callback_topic=callback_topic,
+                                                                    id_token=id_token)
+                    claimed = True
+                    if delegation is not None:
+                        print("Delegation reclaimed: {} ".format(delegation.get_delegation_id()))
+                    else:
+                        self.print_result(status=error.get_status())
+            if not claimed:
+                print(f"No delegations found for Broker# {broker}")
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())
