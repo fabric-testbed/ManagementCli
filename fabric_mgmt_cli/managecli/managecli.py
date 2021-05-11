@@ -53,8 +53,8 @@ def slices(ctx):
 
 
 @slices.command()
-@click.option('--sliceid', default=None, help='Slice Id', required=True)
-@click.option('--actor', default=None, help='Actor Name', required=True)
+@click.option('--sliceid', help='Slice Id', required=True)
+@click.option('--actor', help='Actor Name', required=True)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
@@ -73,8 +73,8 @@ def close(ctx, sliceid, actor, idtoken, refreshtoken):
 
 
 @slices.command()
-@click.option('--sliceid', default=None, help='Slice Id', required=True)
-@click.option('--actor', default=None, help='Actor Name', required=True)
+@click.option('--sliceid', help='Slice Id', required=True)
+@click.option('--actor', help='Actor Name', required=True)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
@@ -95,17 +95,18 @@ def remove(ctx, sliceid, actor, idtoken, refreshtoken):
 @slices.command()
 @click.option('--actor', default=None, help='Actor Name', required=True)
 @click.option('--sliceid', default=None, help='Slice ID', required=False)
+@click.option('--slicename', default=None, help='Slice Name', required=False)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def query(ctx, actor, sliceid, idtoken, refreshtoken):
+def query(ctx, actor, sliceid, slicename, idtoken, refreshtoken):
     """ Get slice(s) from an actor
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ShowCommand(logger=KafkaProcessorSingleton.get().logger)
         mgmt_command.get_slices(actor_name=actor, callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                                slice_id=sliceid, id_token=idtoken)
+                                slice_id=sliceid, slice_name=slicename, id_token=idtoken)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
@@ -125,8 +126,8 @@ def slivers(ctx):
 
 
 @slivers.command()
-@click.option('--sliverid', default=None, help='Sliver Id', required=True)
-@click.option('--actor', default=None, help='Actor Name', required=True)
+@click.option('--sliverid', help='Sliver Id', required=True)
+@click.option('--actor', help='Actor Name', required=True)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
@@ -145,8 +146,8 @@ def close(ctx, sliverid, actor, idtoken, refreshtoken):
 
 
 @slivers.command()
-@click.option('--sliverid', default=None, help='Sliver Id', required=True)
-@click.option('--actor', default=None, help='Actor Name', required=True)
+@click.option('--sliverid', help='Sliver Id', required=True)
+@click.option('--actor', help='Actor Name', required=True)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
@@ -165,19 +166,26 @@ def remove(ctx, sliverid, actor, idtoken, refreshtoken):
 
 
 @slivers.command()
-@click.option('--actor', default=None, help='Actor Name', required=True)
+@click.option('--actor', help='Actor Name', required=True)
+@click.option('--sliceid', default=None, help='Slice Id', required=False)
 @click.option('--sliverid', default=None, help='Sliver Id', required=False)
+@click.option('--state',
+              type=click.Choice(['nascent', 'ticketed', 'active', 'activeticketed', 'closed', 'closewait', 'failed',
+                                 'unknown', 'all'],
+                                case_sensitive=False),
+              default='all', help='Sliver State', required=False)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def query(ctx, actor, sliverid, idtoken, refreshtoken):
+def query(ctx, actor, sliceid, sliverid, state, idtoken, refreshtoken):
     """ Get sliver(s) from an actor
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ShowCommand(logger=KafkaProcessorSingleton.get().logger)
-        mgmt_command.get_reservations(actor_name=actor, callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                                      rid=sliverid, id_token=idtoken)
+        mgmt_command.get_reservations(actor_name=actor,
+                                      callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
+                                      slice_id=sliceid, rid=sliverid, state=state, id_token=idtoken)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
@@ -197,8 +205,8 @@ def delegations(ctx):
 
 
 @delegations.command()
-@click.option('--broker', default=None, help='Broker Name', required=True)
-@click.option('--am', default=None, help='AM Name', required=True)
+@click.option('--broker', help='Broker Name', required=True)
+@click.option('--am', help='AM Name', required=True)
 @click.option('--did', default=None, help='Delegation Id', required=False)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
@@ -219,8 +227,8 @@ def claim(ctx, broker: str, am: str, did: str, idtoken, refreshtoken):
 
 
 @delegations.command()
-@click.option('--broker', default=None, help='Broker Name', required=True)
-@click.option('--am', default=None, help='AM Name', required=True)
+@click.option('--broker', help='Broker Name', required=True)
+@click.option('--am', help='AM Name', required=True)
 @click.option('--did', default=None, help='Delegation Id', required=False)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
@@ -241,19 +249,25 @@ def reclaim(ctx, broker: str, am: str, did: str, idtoken, refreshtoken):
 
 
 @delegations.command()
-@click.option('--actor', default=None, help='Actor Name', required=True)
+@click.option('--actor', help='Actor Name', required=True)
+@click.option('--sliceid', default=None, help='Slice Id', required=False)
 @click.option('--did', default=None, help='Delegation Id', required=False)
+@click.option('--state',
+              type=click.Choice(['nascent', 'delegated', 'reclaimed', 'closed', 'failed', 'all'],
+                                case_sensitive=False),
+              default='all', help='Sliver State', required=False)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def query(ctx, actor, did, idtoken, refreshtoken):
+def query(ctx, actor, sliceid, did, state, idtoken, refreshtoken):
     """ Get delegation(s) from an actor
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ShowCommand(logger=KafkaProcessorSingleton.get().logger)
-        mgmt_command.get_delegations(actor_name=actor, callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                                     did=did, id_token=idtoken)
+        mgmt_command.get_delegations(actor_name=actor,
+                                     callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
+                                     slice_id=sliceid, did=did, state=state, id_token=idtoken)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
