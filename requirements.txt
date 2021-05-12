@@ -1,8 +1,9 @@
 click
+pytest
+fabric-cf==0.23
+toml==0.10.1
+pytest==6.2.1
 iniconfig==1.0.1
 attrs==20.2.0
-pytest==6.2.1
-toml==0.10.1
-fabric-cf==0.22
 fabric-credmgr-client
 setuptools
