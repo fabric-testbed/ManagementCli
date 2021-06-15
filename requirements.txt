@@ -1,7 +1,12 @@
 click==7.1.2
-pytest
+pytest==6.2.1
 fabric-cf==1.0b28
 fabric-credmgr-client
 setuptools
 urllib3==1.26.5
 six==1.15.0
+packaging==20.8
+certifi==2020.12.5
+attrs==20.3.0
+Jinja2==2.11.3
+MarkupSafe==1.1.1
