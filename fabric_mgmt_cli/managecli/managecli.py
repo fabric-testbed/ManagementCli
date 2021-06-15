@@ -98,15 +98,16 @@ def remove(ctx, sliceid, actor, idtoken, refreshtoken):
 @click.option('--slicename', default=None, help='Slice Name', required=False)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
+@click.option('--email', default=None, help='User email', required=False)
 @click.pass_context
-def query(ctx, actor, sliceid, slicename, idtoken, refreshtoken):
+def query(ctx, actor, sliceid, slicename, idtoken, refreshtoken, email):
     """ Get slice(s) from an actor
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ShowCommand(logger=KafkaProcessorSingleton.get().logger)
         mgmt_command.get_slices(actor_name=actor, callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                                slice_id=sliceid, slice_name=slicename, id_token=idtoken)
+                                slice_id=sliceid, slice_name=slicename, id_token=idtoken, email=email)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
@@ -176,8 +177,9 @@ def remove(ctx, sliverid, actor, idtoken, refreshtoken):
               default='all', help='Sliver State', required=False)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
+@click.option('--email', default=None, help='User Email', required=False)
 @click.pass_context
-def query(ctx, actor, sliceid, sliverid, state, idtoken, refreshtoken):
+def query(ctx, actor, sliceid, sliverid, state, idtoken, refreshtoken, email):
     """ Get sliver(s) from an actor
     """
     try:
@@ -185,7 +187,7 @@ def query(ctx, actor, sliceid, sliverid, state, idtoken, refreshtoken):
         mgmt_command = ShowCommand(logger=KafkaProcessorSingleton.get().logger)
         mgmt_command.get_reservations(actor_name=actor,
                                       callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                                      slice_id=sliceid, rid=sliverid, state=state, id_token=idtoken)
+                                      slice_id=sliceid, rid=sliverid, state=state, id_token=idtoken, email=email)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()

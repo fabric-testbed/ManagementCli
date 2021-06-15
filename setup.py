@@ -1,9 +1,10 @@
 # coding: utf-8
 
 from setuptools import setup, find_packages
+from fabric_mgmt_cli import __VERSION__
 
 NAME = "fabric-mgmt-cli"
-VERSION = "0.9"
+VERSION = __VERSION__
 # To install the library, run the following
 #
 # python setup.py install

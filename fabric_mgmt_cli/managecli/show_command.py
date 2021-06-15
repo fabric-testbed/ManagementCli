@@ -29,6 +29,7 @@ from typing import Tuple, List
 from fabric_cf.actor.core.apis.abc_delegation import DelegationState
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
+from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
 from fabric_cf.actor.core.manage.error import Error
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.util.id import ID
@@ -40,13 +41,14 @@ from fabric_mgmt_cli.managecli.command import Command
 
 
 class ShowCommand(Command):
-    def get_slices(self, *, actor_name: str, callback_topic: str, slice_id: str, slice_name: str, id_token: str):
+    def get_slices(self, *, actor_name: str, callback_topic: str, slice_id: str, slice_name: str, id_token: str,
+                   email: str):
         try:
             slices, error = self.do_get_slices(actor_name=actor_name, callback_topic=callback_topic, slice_id=slice_id,
-                                               slice_name=slice_name, id_token=id_token)
+                                               slice_name=slice_name, id_token=id_token, email=email)
             if slices is not None and len(slices) > 0:
                 for s in slices:
-                    s.print()
+                    self.__print_slice(slice_object=s)
             else:
                 print("Status: {}".format(error.get_status()))
         except Exception as e:
@@ -55,10 +57,11 @@ class ShowCommand(Command):
             print("Exception occurred while processing get_slices {}".format(e))
 
     def get_reservations(self, *, actor_name: str, callback_topic: str, slice_id: str, rid: str,
-                         state: str, id_token: str):
+                         state: str, id_token: str, email: str):
         try:
             reservations, error = self.do_get_reservations(actor_name=actor_name, callback_topic=callback_topic,
-                                                           slice_id=slice_id, rid=rid, state=state, id_token=id_token)
+                                                           slice_id=slice_id, rid=rid, state=state, id_token=id_token,
+                                                           email=email)
             if reservations is not None and len(reservations) > 0:
                 for r in reservations:
                     self.__print_reservation(reservation=r)
@@ -85,7 +88,7 @@ class ShowCommand(Command):
             print("Exception occurred while processing get_delegations {}".format(e))
 
     def do_get_slices(self, *, actor_name: str, callback_topic: str, slice_id: str = None, slice_name: str,
-                      id_token: str = None) -> Tuple[List[SliceAvro], Error]:
+                      id_token: str = None, email: str = None) -> Tuple[List[SliceAvro], Error]:
         actor = self.get_actor(actor_name=actor_name)
 
         if actor is None:
@@ -95,14 +98,16 @@ class ShowCommand(Command):
             sid = None
             if slice_id is not None:
                 sid = ID(uid=slice_id)
-            return actor.get_slices(id_token=id_token, slice_id=sid, slice_name=slice_name), actor.get_last_error()
+            return actor.get_slices(id_token=id_token, slice_id=sid,
+                                    slice_name=slice_name, email=email), actor.get_last_error()
         except Exception:
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)
         return None, actor.get_last_error()
 
     def do_get_reservations(self, *, actor_name: str, callback_topic: str, slice_id: str = None, rid: str = None,
-                            state: str = None, id_token: str = None) -> Tuple[List[ReservationMng], Error]:
+                            state: str = None, id_token: str = None,
+                            email: str = None) -> Tuple[List[ReservationMng], Error]:
         actor = self.get_actor(actor_name=actor_name)
 
         if actor is None:
@@ -119,7 +124,7 @@ class ShowCommand(Command):
             if state is not None and state != "all":
                 reservation_state = ReservationStates.translate(state_name=state).value
             return actor.get_reservations(id_token=id_token, slice_id=sid, rid=reservation_id,
-                                          state=reservation_state), actor.get_last_error()
+                                          state=reservation_state, email=email), actor.get_last_error()
         except Exception as e:
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)
@@ -174,3 +179,20 @@ class ShowCommand(Command):
     def __time_string(*, milliseconds):
         time_obj = ActorClock.from_milliseconds(milli_seconds=milliseconds)
         return time_obj.strftime(Constants.RENEW_TIME_FORMAT)
+
+    @staticmethod
+    def __print_slice(*, slice_object: SliceAvro):
+        """
+        Prints Slice Object
+        """
+        print("")
+        print(f"Slice Name: {slice_object.get_slice_name()} Slice ID: {slice_object.get_slice_id()}")
+        if slice_object.get_graph_id() is not None:
+            print(f"Graph ID: {slice_object.get_graph_id()}")
+
+        if slice_object.get_owner() is not None:
+            print(f"Slice owner: {slice_object.get_owner()}")
+
+        if slice_object.get_state() is not None:
+            print(f"Slice state: {SliceState(slice_object.get_state())}")
+        print("")
