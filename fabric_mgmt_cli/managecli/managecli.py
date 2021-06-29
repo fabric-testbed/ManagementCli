@@ -30,6 +30,7 @@ import click
 from fabric_mgmt_cli.managecli.kafka_processor import KafkaProcessorSingleton
 from fabric_mgmt_cli.managecli.manage_command import ManageCommand
 from fabric_mgmt_cli.managecli.show_command import ShowCommand
+from fabric_mgmt_cli.managecli.net import commands as netcommands
 
 
 @click.group()
@@ -275,7 +276,7 @@ def query(ctx, actor, sliceid, did, state, idtoken, refreshtoken):
         # traceback.print_exc()
         click.echo('Error occurred: {}'.format(e))
 
-
 managecli.add_command(slices)
 managecli.add_command(slivers)
 managecli.add_command(delegations)
+managecli.add_command(netcommands.net)

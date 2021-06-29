@@ -1,0 +1,52 @@
+paths:
+  ERO-1:
+    - 10.1.1.1
+  ERO-2:
+    - 10.1.1.2
+
+nodes:
+  renc-w1-ptp:
+    device: renci-ncs55-0
+    port: HundredGigE 0/0/0/13
+    outer_vlan: 234
+    path: ERO-1
+    bandwidth: 1000000000
+
+  renc-w2-ptp:
+    device: renci-ncs55-1
+    port: HundredGigE 0/0/1/2
+    outer_vlan: 234
+    path: ERO-2
+
+  renc-w1-br0:
+    device: renci-ncs55-0
+    port: HundredGigE 0/0/0/13
+    outer_vlan: 100
+
+  renc-w1-br1:
+    device: renci-ncs55-0
+    port: HundredGigE 0/0/0/25
+    outer_vlan: 100
+
+  renc-w1-sts:
+    device: renci-ncs55-0
+    port: HundredGigE 0/0/0/14
+    path: ERO-1
+    bandwidth: 1000000000
+
+  renc-w2-sts:
+    device: renci-ncs55-1
+    port: HundredGigE 0/0/1/3
+    outer_vlan: 236
+    path: ERO-2
+    bandwidth: 1000000000
+    burst_size: 1250000
+
+  renc-w3-rt:
+    device: renci-ncs55-0
+    port: TwentyFiveGigE 0/0/0/25/0
+    address-v4: 10.10.128.1
+    netmask-v4: 24
+    address-v6: 2001:DB8:ABCD:12::1
+    netmask-v6: 64
+    gateway-mac-address: 1002.3001.1003

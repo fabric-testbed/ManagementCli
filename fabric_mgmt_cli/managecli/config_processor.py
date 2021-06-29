@@ -234,3 +234,23 @@ class ConfigProcessor:
 
     def get_credmgr_host(self) -> str:
         return self.config.get_auth().get_credmgr_host()
+
+    def get_net_url(self) -> str:
+        if self.config is not None and self.config.get_net() is not None:
+            return self.config.get_net().get_url()
+        return None
+
+    def get_net_username(self) -> str:
+        if self.config is not None and self.config.get_net() is not None:
+            return self.config.get_net().get_username()
+        return None
+
+    def get_net_password(self) -> str:
+        if self.config is not None and self.config.get_net() is not None:
+            return self.config.get_net().get_password()
+        return None
+
+    def get_net_validate_certs(self) -> str:
+        if self.config is not None and self.config.get_net() is not None:
+            return self.config.get_net().get_validate_certs()
+        return None
