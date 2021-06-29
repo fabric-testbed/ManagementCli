@@ -221,13 +221,6 @@ def delete(ctx, service, name):
     net_cmd.delete_service(s.service_str, name)
     net_cmd.print_result(f"Delete {service} service: {s.name}", True)
 
-    s = cls(name=name)
-    ids = idipa(service, name)
-    net_cmd = NetCommand()
-    net_cmd.delete_service(ids)
-    net_cmd.delete_service(s)
-    net_cmd.print_result(f"Delete {service} service: {s.name}", True)
-
 @show.command()
 @click.pass_context
 def devices(ctx):
