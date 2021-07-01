@@ -1,6 +1,6 @@
 click==7.1.2
 pytest==6.2.1
-fabric-cf==1.0b31
+fabric-cf==1.0b32
 fabric-credmgr-client
 setuptools
 urllib3==1.26.5
