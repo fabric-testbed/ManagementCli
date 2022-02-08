@@ -216,22 +216,6 @@ class ConfigProcessor:
             conf[Constants.SASL_PASSWORD] = sasl_password
         return conf
 
-    def get_kafka_schemas(self):
-        key_schema_file = self.get_kafka_key_schema()
-        value_schema_file = self.get_kafka_value_schema()
-
-        from confluent_kafka import avro
-        file = open(key_schema_file, "r")
-        kbytes = file.read()
-        file.close()
-        key_schema = avro.loads(kbytes)
-        file = open(value_schema_file, "r")
-        vbytes = file.read()
-        file.close()
-        val_schema = avro.loads(vbytes)
-
-        return key_schema, val_schema
-
     def get_credmgr_host(self) -> str:
         return self.config.get_auth().get_credmgr_host()
 

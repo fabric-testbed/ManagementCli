@@ -62,18 +62,19 @@ class KafkaProcessor:
         Set up Kafka Producer and Consumer
         """
         conf = self.config_processor.get_kafka_config_producer()
-        key_schema, val_schema = self.config_processor.get_kafka_schemas()
-        self.key_schema = key_schema
-        self.val_schema = val_schema
+        self.key_schema = self.config_processor.get_kafka_key_schema()
+        self.val_schema = self.config_processor.get_kafka_value_schema()
 
         from fabric_mb.message_bus.producer import AvroProducerApi
-        self.producer = AvroProducerApi(conf=conf, key_schema=key_schema, record_schema=val_schema, logger=self.logger)
+        self.producer = AvroProducerApi(producer_conf=conf, key_schema_location=self.key_schema,
+                                        value_schema_location=self.val_schema, logger=self.logger)
 
         consumer_conf = self.config_processor.get_kafka_config_consumer()
         topics = [self.config_processor.get_kafka_topic()]
 
-        self.message_processor = KafkaMgmtMessageProcessor(conf=consumer_conf, key_schema=self.key_schema,
-                                                           record_schema=self.val_schema, topics=topics,
+        self.message_processor = KafkaMgmtMessageProcessor(consumer_conf=consumer_conf,
+                                                           key_schema_location=self.key_schema,
+                                                           value_schema_location=self.val_schema, topics=topics,
                                                            logger=self.logger)
 
     def initialize(self):

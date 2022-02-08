@@ -36,6 +36,8 @@ from fabric_cf.actor.core.util.id import ID
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
+from fim.slivers.network_node import NodeSliver
+from fim.slivers.network_service import NetworkServiceSliver
 
 from fabric_mgmt_cli.managecli.command import Command
 
@@ -64,7 +66,7 @@ class ShowCommand(Command):
                                                            email=email)
             if reservations is not None and len(reservations) > 0:
                 for r in reservations:
-                    self.__print_reservation(reservation=r)
+                    self.__print_reservation(reservation=r, detailed=(rid is not None))
             else:
                 print("Status: {}".format(error.get_status()))
         except Exception as e:
@@ -153,7 +155,7 @@ class ShowCommand(Command):
         return None, actor.get_last_error()
 
     @staticmethod
-    def __print_reservation(*, reservation: ReservationMng):
+    def __print_reservation(*, reservation: ReservationMng, detailed: bool = False):
         """
         Prints ReservationMng
         """
@@ -171,9 +173,27 @@ class ShowCommand(Command):
             print(f"Units: {reservation.units} State: {ReservationStates(reservation.state)} "
                   f"Pending State: {ReservationPendingStates(reservation.pending_state)}")
 
-        if reservation.sliver is not None:
-            print(f"Sliver: {reservation.get_sliver()}")
+        sliver = reservation.get_sliver()
+        if sliver is not None:
+            print(f"Sliver: {sliver}")
+            if detailed:
+                if isinstance(sliver, NodeSliver):
+                    ShowCommand.__print_node_sliver(sliver=sliver)
+                elif isinstance(sliver, NetworkServiceSliver):
+                    ShowCommand.__print_ns_sliver(sliver=sliver)
         print("")
+
+    @staticmethod
+    def __print_node_sliver(*, sliver: NodeSliver):
+        if sliver.attached_components_info is not None:
+            for c in sliver.attached_components_info.devices.items():
+                print(c)
+
+    @staticmethod
+    def __print_ns_sliver(*, sliver: NetworkServiceSliver):
+        if sliver.interface_info is not None:
+            for c in sliver.interface_info.interfaces.values():
+                print(c)
 
     @staticmethod
     def __time_string(*, milliseconds):

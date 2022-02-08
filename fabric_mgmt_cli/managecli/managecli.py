@@ -276,7 +276,42 @@ def query(ctx, actor, sliceid, did, state, idtoken, refreshtoken):
         # traceback.print_exc()
         click.echo('Error occurred: {}'.format(e))
 
+
+@click.group()
+@click.pass_context
+def maintenance(ctx):
+    """ Maintenance Operations
+    """
+    config = os.getenv('FABRIC_MGMT_CLI_CONFIG_PATH')
+    if config is None or config == "":
+        ctx.fail('FABRIC_MGMT_CLI_CONFIG_PATH is not set')
+
+    return
+
+
+@maintenance.command()
+@click.option('--actor', help='Actor Name', required=True)
+@click.option('--mode', help='Mode value, i.e. True (Enabled) or False (Disabled)', default=True, required=False)
+@click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
+@click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
+@click.pass_context
+def setmode(ctx, actor: str, mode: bool, idtoken: str, refreshtoken: str):
+    """ Enable/Disable Maintenance Mode for an actor
+    """
+    try:
+        idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
+        mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
+        mgmt_command.toggle_maintenance_mode(actor_name=actor,
+                                             callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
+                                             mode=mode, id_token=idtoken)
+        KafkaProcessorSingleton.get().stop()
+    except Exception as e:
+        # traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
+
+
 managecli.add_command(slices)
 managecli.add_command(slivers)
 managecli.add_command(delegations)
+managecli.add_command(maintenance)
 managecli.add_command(netcommands.net)
