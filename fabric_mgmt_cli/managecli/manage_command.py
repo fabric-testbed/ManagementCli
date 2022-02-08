@@ -370,9 +370,10 @@ class ManageCommand(ShowCommand):
         @param mode mode
         @param id_token id token
         """
+        status = False
+        error = ""
         try:
             actor = self.get_actor(actor_name=actor_name)
-            status = False
 
             if actor is None:
                 raise Exception(f"Invalid arguments! {actor_name} not found")
@@ -387,7 +388,13 @@ class ManageCommand(ShowCommand):
                 self.logger.error(f"Exception occurred e: {e}")
                 self.logger.error(traceback.format_exc())
 
-            return status, actor.get_last_error()
+            error = actor.get_last_error()
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())
+            error = str(e)
+
+        if status:
+            print(f"Maintenance mode successfully set to {mode}")
+        else:
+            print(f"Failure to set maintenance mode error {error}")
