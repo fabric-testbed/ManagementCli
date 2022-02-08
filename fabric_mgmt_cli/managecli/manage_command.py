@@ -29,6 +29,7 @@ from typing import Tuple
 from fabric_cf.actor.core.manage.error import Error
 from fabric_cf.actor.core.util.id import ID
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
+from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 
 from fabric_mgmt_cli.managecli.show_command import ShowCommand
 
@@ -250,17 +251,24 @@ class ManageCommand(ShowCommand):
             if am_actor is None or broker_actor is None:
                 raise Exception("Invalid arguments am_actor {} or broker_actor {} not found".format(am_actor,
                                                                                                     broker_actor))
+            delegations = []
+            if did is None:
+                delegations, error = self.do_get_delegations(actor_name=am, callback_topic=callback_topic, did=did,
+                                                             id_token=id_token)
+                if delegations is None:
+                    print("Error occurred while getting delegations for actor: {}".format(am))
+                    self.print_result(status=error.get_status())
+                    return
 
-            delegations, error = self.do_get_delegations(actor_name=am, callback_topic=callback_topic, did=did,
-                                                         id_token=id_token)
-            if delegations is None:
-                print("Error occurred while getting delegations for actor: {}".format(am))
-                self.print_result(status=error.get_status())
-                return
-
-            if delegations is None or len(delegations) == 0:
-                print("No delegations to be claimed from {} by {}:".format(am, broker))
-                return
+                if delegations is None or len(delegations) == 0:
+                    print("No delegations to be claimed from {} by {}:".format(am, broker))
+                    return
+            else:
+                dd = DelegationAvro()
+                dd.slice = SliceAvro()
+                dd.slice.slice_name = broker
+                dd.delegation_id = did
+                delegations = [dd]
 
             claimed = False
             for d in delegations:
@@ -352,3 +360,41 @@ class ManageCommand(ShowCommand):
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())
+
+    def toggle_maintenance_mode(self, *, actor_name: str, callback_topic: str, mode: bool = False,
+                                id_token: str = None):
+        """
+        Claim delegations
+        @param actor_name actor name
+        @param callback_topic callback topic
+        @param mode mode
+        @param id_token id token
+        """
+        status = False
+        error = ""
+        try:
+            actor = self.get_actor(actor_name=actor_name)
+
+            if actor is None:
+                raise Exception(f"Invalid arguments! {actor_name} not found")
+
+            try:
+                actor.prepare(callback_topic=callback_topic)
+
+                status = actor.toggle_maintenance_mode(actor_guid=str(actor.get_guid()),
+                                                       mode=mode, callback_topic=callback_topic,
+                                                       id_token=id_token)
+            except Exception as e:
+                self.logger.error(f"Exception occurred e: {e}")
+                self.logger.error(traceback.format_exc())
+
+            error = actor.get_last_error()
+        except Exception as e:
+            self.logger.error(f"Exception occurred e: {e}")
+            self.logger.error(traceback.format_exc())
+            error = str(e)
+
+        if status:
+            print(f"Maintenance mode successfully set to {mode}")
+        else:
+            print(f"Failure to set maintenance mode error {error}")
