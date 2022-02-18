@@ -26,6 +26,7 @@
 import traceback
 from typing import Tuple
 
+from fabric_cf.actor.core.apis.abc_delegation import DelegationState
 from fabric_cf.actor.core.manage.error import Error
 from fabric_cf.actor.core.util.id import ID
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
@@ -272,6 +273,8 @@ class ManageCommand(ShowCommand):
 
             claimed = False
             for d in delegations:
+                if d.get_state() == DelegationState.Failed.value or d.get_state() == DelegationState.Closed.value:
+                    continue
                 if d.get_slice_object().get_slice_name() == broker:
                     print("Claiming Delegation# {}".format(d.get_delegation_id()))
                     delegation, error = self.do_claim_delegations(broker=broker, am_guid=am_actor.get_guid(),
@@ -344,6 +347,8 @@ class ManageCommand(ShowCommand):
 
             claimed = False
             for d in delegations:
+                if d.get_state() == DelegationState.Failed.value or d.get_state() == DelegationState.Closed.value:
+                    continue
                 if d.get_slice_object().get_slice_name() == broker:
                     print("Reclaiming Delegation# {}".format(d.get_delegation_id()))
                     delegation, error = self.do_reclaim_delegations(broker=broker, am_guid=am_actor.get_guid(),

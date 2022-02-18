@@ -198,7 +198,7 @@ class ShowCommand(Command):
     @staticmethod
     def __time_string(*, milliseconds):
         time_obj = ActorClock.from_milliseconds(milli_seconds=milliseconds)
-        return time_obj.strftime(Constants.RENEW_TIME_FORMAT)
+        return time_obj.strftime(Constants.LEASE_TIME_FORMAT)
 
     @staticmethod
     def __print_slice(*, slice_object: SliceAvro):
