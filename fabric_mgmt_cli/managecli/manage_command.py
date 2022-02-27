@@ -27,6 +27,7 @@ import traceback
 from typing import Tuple
 
 from fabric_cf.actor.core.apis.abc_delegation import DelegationState
+from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
 from fabric_cf.actor.core.manage.error import Error
 from fabric_cf.actor.core.util.id import ID
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
@@ -403,3 +404,35 @@ class ManageCommand(ShowCommand):
             print(f"Maintenance mode successfully set to {mode}")
         else:
             print(f"Failure to set maintenance mode error {error}")
+
+    def delete_dead_slices(self, *, actor_name: str, callback_topic: str, id_token: str, email: str):
+
+        try:
+            slices, error = self.do_get_slices(actor_name=actor_name, callback_topic=callback_topic, id_token=id_token,
+                                               email=email)
+
+            if slices is not None:
+                for s in slices:
+                    state = SliceState(s.get_state())
+                    if state not in [SliceState.Closing, SliceState.Dead]:
+                        continue
+                    print(f"Attempting to remove reservations for slice {s.get_slice_id()} in state {state}")
+                    reservations, error = self.do_get_reservations(actor_name=actor_name, callback_topic=callback_topic,
+                                                                   slice_id=s.get_slice_id(), id_token=id_token)
+
+                    if reservations is None:
+                        print(f"No reservations to remove for slice {s.get_slice_id()}")
+                    else:
+                        for r in reservations:
+                            print(f"Attempting to remove reservation: {r.get_reservation_id()}")
+                            self.do_remove_reservation(rid=r.get_reservation_id(), actor_name=actor_name,
+                                                       callback_topic=callback_topic, id_token=id_token)
+
+                    print(f"Attempting to remove slice: {s.get_slice_id()}")
+                    self.remove_slice(slice_id=s.get_slice_id(), actor_name=actor_name,
+                                      callback_topic=callback_topic, id_token=id_token)
+            else:
+                print("No Dead/closing slices to remove")
+        except Exception as e:
+            self.logger.error(f"Exception occurred e: {e}")
+            self.logger.error(traceback.format_exc())
