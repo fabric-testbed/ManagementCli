@@ -199,7 +199,8 @@ class ShowCommand(Command):
         Prints Slice Object
         """
         print("")
-        print(f"Slice Name: {slice_object.get_slice_name()} Slice ID: {slice_object.get_slice_id()}")
+        print(f"Slice Name: {slice_object.get_slice_name()} Slice ID: {slice_object.get_slice_id()} "
+              f"Project ID: {slice_object.get_slice_id()}")
         if slice_object.get_graph_id() is not None:
             print(f"Graph ID: {slice_object.get_graph_id()}")
 
