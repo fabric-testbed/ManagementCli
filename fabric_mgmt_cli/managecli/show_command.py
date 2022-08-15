@@ -97,11 +97,8 @@ class ShowCommand(Command):
             raise Exception("Invalid arguments actor {} not found".format(actor_name))
         try:
             actor.prepare(callback_topic=callback_topic)
-            sid = None
-            if slice_id is not None:
-                sid = ID(uid=slice_id)
-            return actor.get_slices(id_token=id_token, slice_id=sid,
-                                    slice_name=slice_name, email=email), actor.get_last_error()
+            sid = ID(uid=slice_id) if slice_id is not None else None
+            return actor.get_slices(slice_id=sid, slice_name=slice_name, email=email), actor.get_last_error()
         except Exception:
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)
@@ -116,16 +113,12 @@ class ShowCommand(Command):
             raise Exception("Invalid arguments actor {} not found".format(actor_name))
         try:
             actor.prepare(callback_topic=callback_topic)
-            sid = None
-            if slice_id is not None:
-                sid = ID(uid=slice_id)
-            reservation_id = None
-            if rid is not None:
-                reservation_id = ID(uid=rid)
+            sid = ID(uid=slice_id) if slice_id is not None else None
+            reservation_id = ID(uid=rid) if rid is not None else None
             reservation_state = None
             if state is not None and state != "all":
                 reservation_state = ReservationStates.translate(state_name=state).value
-            return actor.get_reservations(id_token=id_token, slice_id=sid, rid=reservation_id,
+            return actor.get_reservations(slice_id=sid, rid=reservation_id,
                                           state=reservation_state, email=email), actor.get_last_error()
         except Exception as e:
             ex_str = traceback.format_exc()
@@ -146,7 +139,7 @@ class ShowCommand(Command):
             delegation_state = None
             if state is not None and state != "all":
                 delegation_state = DelegationState.translate(state_name=state).value
-            return actor.get_delegations(id_token=id_token, delegation_id=did, slice_id=sid,
+            return actor.get_delegations(delegation_id=did, slice_id=sid,
                                          state=delegation_state), actor.get_last_error()
         except Exception as e:
             traceback.print_exc()
@@ -206,7 +199,8 @@ class ShowCommand(Command):
         Prints Slice Object
         """
         print("")
-        print(f"Slice Name: {slice_object.get_slice_name()} Slice ID: {slice_object.get_slice_id()}")
+        print(f"Slice Name: {slice_object.get_slice_name()} Slice ID: {slice_object.get_slice_id()} "
+              f"Project ID: {slice_object.get_slice_id()}")
         if slice_object.get_graph_id() is not None:
             print(f"Graph ID: {slice_object.get_graph_id()}")
 
@@ -215,4 +209,7 @@ class ShowCommand(Command):
 
         if slice_object.get_state() is not None:
             print(f"Slice state: {SliceState(slice_object.get_state())}")
+
+        if slice_object.get_lease_end() is not None:
+            print(f"Lease time: {slice_object.get_lease_end()}")
         print("")

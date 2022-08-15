@@ -53,10 +53,8 @@ class ManageCommand(ShowCommand):
 
         try:
             actor.prepare(callback_topic=callback_topic)
-            reservation_id = None
-            if rid is not None:
-                reservation_id = ID(uid=rid)
-            return actor.close_reservation(rid=reservation_id, id_token=id_token), actor.get_last_error()
+            reservation_id = ID(uid=rid) if rid is not None else None
+            return actor.close_reservation(rid=reservation_id), actor.get_last_error()
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())
@@ -97,7 +95,7 @@ class ManageCommand(ShowCommand):
 
         try:
             actor.prepare(callback_topic=callback_topic)
-            return actor.close_reservations(slice_id=slice_id, id_token=id_token), actor.get_last_error()
+            return actor.close_reservations(slice_id=slice_id), actor.get_last_error()
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())
@@ -141,10 +139,8 @@ class ManageCommand(ShowCommand):
 
         try:
             actor.prepare(callback_topic=callback_topic)
-            reservation_id = None
-            if rid is not None:
-                reservation_id = ID(uid=rid)
-            return actor.remove_reservation(rid=reservation_id, id_token=id_token), actor.get_last_error()
+            reservation_id = ID(uid=rid) if rid is not None else None
+            return actor.remove_reservation(rid=reservation_id), actor.get_last_error()
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())
@@ -184,10 +180,8 @@ class ManageCommand(ShowCommand):
 
         try:
             actor.prepare(callback_topic=callback_topic)
-            sid = None
-            if slice_id is not None:
-                sid = ID(uid=slice_id)
-            return actor.remove_slice(slice_id=sid, id_token=id_token), actor.get_last_error()
+            sid = ID(uid=slice_id) if slice_id is not None else None
+            return actor.remove_slice(slice_id=sid), actor.get_last_error()
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())
@@ -229,7 +223,7 @@ class ManageCommand(ShowCommand):
         try:
             actor.prepare(callback_topic=callback_topic)
 
-            dlg = actor.claim_delegations(broker=am_guid, did=did, id_token=id_token)
+            dlg = actor.claim_delegations(broker=am_guid, did=did)
             return dlg, actor.get_last_error()
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
@@ -310,7 +304,7 @@ class ManageCommand(ShowCommand):
         try:
             actor.prepare(callback_topic=callback_topic)
 
-            dlg = actor.reclaim_delegations(broker=am_guid, did=did, id_token=id_token)
+            dlg = actor.reclaim_delegations(broker=am_guid, did=did)
             return dlg, actor.get_last_error()
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
@@ -388,8 +382,7 @@ class ManageCommand(ShowCommand):
                 actor.prepare(callback_topic=callback_topic)
 
                 status = actor.toggle_maintenance_mode(actor_guid=str(actor.get_guid()),
-                                                       mode=mode, callback_topic=callback_topic,
-                                                       id_token=id_token)
+                                                       mode=mode, callback_topic=callback_topic)
             except Exception as e:
                 self.logger.error(f"Exception occurred e: {e}")
                 self.logger.error(traceback.format_exc())
@@ -409,7 +402,7 @@ class ManageCommand(ShowCommand):
 
         try:
             slices, error = self.do_get_slices(actor_name=actor_name, callback_topic=callback_topic, id_token=id_token,
-                                               email=email)
+                                               email=email, slice_name=None)
 
             if slices is not None:
                 for s in slices:
@@ -418,7 +411,7 @@ class ManageCommand(ShowCommand):
                         continue
                     print(f"Attempting to remove reservations for slice {s.get_slice_id()} in state {state}")
                     reservations, error = self.do_get_reservations(actor_name=actor_name, callback_topic=callback_topic,
-                                                                   slice_id=s.get_slice_id(), id_token=id_token)
+                                                                   id_token=id_token, slice_id=s.get_slice_id())
 
                     if reservations is None:
                         print(f"No reservations to remove for slice {s.get_slice_id()}")
