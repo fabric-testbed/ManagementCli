@@ -44,10 +44,10 @@ from fabric_mgmt_cli.managecli.command import Command
 
 class ShowCommand(Command):
     def get_slices(self, *, actor_name: str, callback_topic: str, slice_id: str, slice_name: str, id_token: str,
-                   email: str):
+                   email: str, state: str):
         try:
             slices, error = self.do_get_slices(actor_name=actor_name, callback_topic=callback_topic, slice_id=slice_id,
-                                               slice_name=slice_name, id_token=id_token, email=email)
+                                               slice_name=slice_name, id_token=id_token, email=email, state=state)
             if slices is not None and len(slices) > 0:
                 for s in slices:
                     self.__print_slice(slice_object=s)
@@ -81,7 +81,7 @@ class ShowCommand(Command):
                                                          slice_id=slice_id, did=did, state=state, id_token=id_token)
             if delegations is not None and len(delegations) > 0:
                 for d in delegations:
-                    d.print()
+                    ShowCommand.__print_delegation(dlg_object=d)
             else:
                 print("Status: {}".format(error.get_status()))
         except Exception as e:
@@ -90,7 +90,7 @@ class ShowCommand(Command):
             print("Exception occurred while processing get_delegations {}".format(e))
 
     def do_get_slices(self, *, actor_name: str, callback_topic: str, slice_id: str = None, slice_name: str = None,
-                      id_token: str = None, email: str = None) -> Tuple[List[SliceAvro], Error]:
+                      id_token: str = None, email: str = None, state: str = None) -> Tuple[List[SliceAvro] or None, Error]:
         actor = self.get_actor(actor_name=actor_name)
 
         if actor is None:
@@ -98,7 +98,12 @@ class ShowCommand(Command):
         try:
             actor.prepare(callback_topic=callback_topic)
             sid = ID(uid=slice_id) if slice_id is not None else None
-            return actor.get_slices(slice_id=sid, slice_name=slice_name, email=email), actor.get_last_error()
+            slice_state = None
+            if state is not None:
+                slice_state = [SliceState.translate(state_name=state).value]
+
+            result = actor.get_slices(slice_id=sid, slice_name=slice_name, email=email, state=slice_state)
+            return result, actor.get_last_error()
         except Exception:
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)
@@ -106,7 +111,7 @@ class ShowCommand(Command):
 
     def do_get_reservations(self, *, actor_name: str, callback_topic: str, slice_id: str = None, rid: str = None,
                             state: str = None, id_token: str = None,
-                            email: str = None) -> Tuple[List[ReservationMng], Error]:
+                            email: str = None) -> Tuple[List[ReservationMng] or None, Error]:
         actor = self.get_actor(actor_name=actor_name)
 
         if actor is None:
@@ -126,7 +131,7 @@ class ShowCommand(Command):
         return None, actor.get_last_error()
 
     def do_get_delegations(self, *, actor_name: str, callback_topic: str, slice_id: str = None, did: str = None,
-                           state: str = None, id_token: str = None) -> Tuple[List[DelegationAvro], Error]:
+                           state: str = None, id_token: str = None) -> Tuple[List[DelegationAvro] or None, Error]:
         actor = self.get_actor(actor_name=actor_name)
 
         if actor is None:
@@ -142,9 +147,9 @@ class ShowCommand(Command):
             return actor.get_delegations(delegation_id=did, slice_id=sid,
                                          state=delegation_state), actor.get_last_error()
         except Exception as e:
+            self.logger.error(f"Exception occurred while fetching delegations: e {e}")
+            self.logger.error(traceback.format_exc())
             traceback.print_exc()
-            ex_str = traceback.format_exc()
-            self.logger.error(ex_str)
         return None, actor.get_last_error()
 
     @staticmethod
@@ -208,8 +213,26 @@ class ShowCommand(Command):
             print(f"Slice owner: {slice_object.get_owner()}")
 
         if slice_object.get_state() is not None:
-            print(f"Slice state: {SliceState(slice_object.get_state())}")
+            print(f"Slice state: {str(SliceState(slice_object.get_state()))}")
 
         if slice_object.get_lease_end() is not None:
             print(f"Lease time: {slice_object.get_lease_end()}")
         print("")
+
+    @staticmethod
+    def __print_delegation(*, dlg_object: DelegationAvro):
+        """
+        Prints the Delegation Object
+        """
+        print("")
+        print("Delegation ID: {} Slice ID: {}".format(dlg_object.delegation_id, dlg_object.slice.get_slice_id()))
+        if dlg_object.delegation_name is not None:
+            print("Delegation Name: {}".format(dlg_object.delegation_name))
+        if dlg_object.sequence is not None:
+            print("Sequence: {}".format(dlg_object.sequence))
+        if dlg_object.state is not None:
+            print(f"State: {DelegationState(dlg_object.state)}")
+        if dlg_object.graph is not None:
+            print("Graph: {}".format(dlg_object.graph))
+        print("")
+

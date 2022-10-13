@@ -120,15 +120,19 @@ def removealldead(ctx, email, actor, idtoken, refreshtoken):
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.option('--email', default=None, help='User email', required=False)
+@click.option('--state',
+              type=click.Choice(['nascent', 'configuring', 'stableok', 'stableerror', 'modifyok', 'modifyerror',
+                                 'closing', 'dead'],
+                                case_sensitive=False), required=False)
 @click.pass_context
-def query(ctx, actor, sliceid, slicename, idtoken, refreshtoken, email):
+def query(ctx, actor, sliceid, slicename, idtoken, refreshtoken, email, state):
     """ Get slice(s) from an actor
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ShowCommand(logger=KafkaProcessorSingleton.get().logger)
         mgmt_command.get_slices(actor_name=actor, callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                                slice_id=sliceid, slice_name=slicename, id_token=idtoken, email=email)
+                                slice_id=sliceid, slice_name=slicename, id_token=idtoken, email=email, state=state)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
@@ -309,6 +313,48 @@ def query(ctx, actor, sliceid, did, state, idtoken, refreshtoken):
         mgmt_command.get_delegations(actor_name=actor,
                                      callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
                                      slice_id=sliceid, did=did, state=state, id_token=idtoken)
+        KafkaProcessorSingleton.get().stop()
+    except Exception as e:
+        # traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
+
+
+@delegations.command()
+@click.option('--did', help='Delegation Id', required=True)
+@click.option('--actor', help='Actor Name', required=True)
+@click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
+@click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
+@click.pass_context
+def close(ctx, did, actor, idtoken, refreshtoken):
+    """ Closes delegation for an actor
+    """
+    try:
+        idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
+        mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
+        mgmt_command.close_delegation(did=did, actor_name=actor,
+                                      callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
+                                      id_token=idtoken)
+        KafkaProcessorSingleton.get().stop()
+    except Exception as e:
+        # traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
+
+
+@delegations.command()
+@click.option('--did', help='Delegation Id', required=True)
+@click.option('--actor', help='Actor Name', required=True)
+@click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
+@click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
+@click.pass_context
+def remove(ctx, did, actor, idtoken, refreshtoken):
+    """ Removes sliver for an actor
+    """
+    try:
+        idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
+        mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
+        mgmt_command.remove_delegation(did=did, actor_name=actor,
+                                       callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
+                                       id_token=idtoken)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()

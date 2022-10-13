@@ -429,3 +429,84 @@ class ManageCommand(ShowCommand):
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())
+
+    def do_close_delegation(self, *, did: str, actor_name: str, callback_topic: str,
+                            id_token: str) -> Tuple[bool, Error]:
+        """
+        Close delegation by invoking Management Actor Close delegation API
+        @param did delegation id
+        @param actor_name actor name
+        @param callback_topic callback topic
+        @param id_token identity token
+        @return Tuple[bool, Error] indicating success or failure status and error containing failure details
+        """
+        actor = self.get_actor(actor_name=actor_name)
+        if actor is None:
+            raise Exception(f"Invalid arguments actor_name {actor_name} not found")
+
+        try:
+            actor.prepare(callback_topic=callback_topic)
+            return actor.close_delegation(did=did), actor.get_last_error()
+        except Exception as e:
+            self.logger.error(f"Exception occurred e: {e}")
+            self.logger.error(traceback.format_exc())
+
+        return False, actor.get_last_error()
+
+    def close_delegation(self, *, did: str, actor_name: str, callback_topic: str, id_token: str):
+        """
+        Close delegation
+        @param did delegation id
+        @param actor_name actor name
+        @param callback_topic callback topic
+        @param id_token identity token
+        """
+        try:
+            result, error = self.do_close_delegation(did=did, actor_name=actor_name,
+                                                     callback_topic=callback_topic, id_token=id_token)
+            print(result)
+            if result is False:
+                self.print_result(status=error.get_status())
+        except Exception as e:
+            self.logger.error(f"Exception occurred e: {e}")
+            self.logger.error(traceback.format_exc())
+
+    def do_remove_delegation(self, *, did: str, actor_name: str, callback_topic: str,
+                             id_token: str) -> Tuple[bool, Error]:
+        """
+        Remove delegation by invoking Management Actor Remove delegation API
+        @param did delegation id
+        @param actor_name actor name
+        @param callback_topic callback topic
+        @param id_token identity token
+        @return Tuple[bool, Error] indicating success or failure status and error containing failure details
+        """
+        actor = self.get_actor(actor_name=actor_name)
+        if actor is None:
+            raise Exception("Invalid arguments actor_name {} not found".format(actor_name))
+
+        try:
+            actor.prepare(callback_topic=callback_topic)
+            return actor.remove_delegation(did=did), actor.get_last_error()
+        except Exception as e:
+            self.logger.error(f"Exception occurred e: {e}")
+            self.logger.error(traceback.format_exc())
+        return False, actor.get_last_error()
+
+    def remove_delegation(self, *, did: str, actor_name: str, callback_topic: str, id_token: str):
+        """
+        Remove delegation
+        @param did delegation id
+        @param actor_name actor name
+        @param callback_topic callback topic
+        @param id_token identity token
+        """
+        try:
+            result, error = self.do_remove_delegation(did=did, actor_name=actor_name, callback_topic=callback_topic,
+                                                      id_token=id_token)
+            print(result)
+            if result is False:
+                self.print_result(status=error.get_status())
+        except Exception as e:
+            self.logger.error(f"Exception occurred e: {e}")
+            self.logger.error(traceback.format_exc())
