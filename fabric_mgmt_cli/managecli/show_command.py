@@ -81,7 +81,7 @@ class ShowCommand(Command):
                                                          slice_id=slice_id, did=did, state=state, id_token=id_token)
             if delegations is not None and len(delegations) > 0:
                 for d in delegations:
-                    d.print()
+                    ShowCommand.__print_delegation(dlg_object=d)
             else:
                 print("Status: {}".format(error.get_status()))
         except Exception as e:
@@ -218,3 +218,21 @@ class ShowCommand(Command):
         if slice_object.get_lease_end() is not None:
             print(f"Lease time: {slice_object.get_lease_end()}")
         print("")
+
+    @staticmethod
+    def __print_delegation(*, dlg_object: DelegationAvro):
+        """
+        Prints the Delegation Object
+        """
+        print("")
+        print("Delegation ID: {} Slice ID: {}".format(dlg_object.delegation_id, dlg_object.slice.get_slice_id()))
+        if dlg_object.delegation_name is not None:
+            print("Delegation Name: {}".format(dlg_object.delegation_name))
+        if dlg_object.sequence is not None:
+            print("Sequence: {}".format(dlg_object.sequence))
+        if dlg_object.state is not None:
+            print(f"State: {DelegationState(dlg_object.state)}")
+        if dlg_object.graph is not None:
+            print("Graph: {}".format(dlg_object.graph))
+        print("")
+
