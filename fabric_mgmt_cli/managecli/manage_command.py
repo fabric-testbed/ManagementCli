@@ -24,13 +24,17 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import traceback
+from datetime import datetime, timezone
 from typing import Tuple
 
 from fabric_cf.actor.core.apis.abc_delegation import DelegationState
+from fabric_cf.actor.core.common.constants import Constants
+from fabric_cf.actor.core.container.maintenance import MaintenanceState
 from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
 from fabric_cf.actor.core.manage.error import Error
 from fabric_cf.actor.core.util.id import ID
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
+from fabric_mb.message_bus.messages.site_avro import SiteAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 
 from fabric_mgmt_cli.managecli.show_command import ShowCommand
@@ -361,13 +365,19 @@ class ManageCommand(ShowCommand):
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())
 
-    def toggle_maintenance_mode(self, *, actor_name: str, callback_topic: str, mode: bool = False,
+    def toggle_maintenance_mode(self, *, actor_name: str, callback_topic: str, mode: str, projects: str = None,
+                                users: str = None, site_name: str = None, workers: str = None, deadline: str = None,
                                 id_token: str = None):
         """
         Claim delegations
         @param actor_name actor name
         @param callback_topic callback topic
         @param mode mode
+        @param projects comma separated list of project_ids allowed in maintenance
+        @param users comma separated list of email address of the users allowed in maintenance
+        @param site_name site name
+        @param workers comma separated list of specific workers on a site which are in maintenance
+        @param deadline start time for the Maintenance
         @param id_token id token
         """
         status = False
@@ -378,11 +388,32 @@ class ManageCommand(ShowCommand):
             if actor is None:
                 raise Exception(f"Invalid arguments! {actor_name} not found")
 
+            mode = MaintenanceState.translate_string_to_state(state_string=mode.lower())
+            mode_value = mode.value
+
+            if mode == MaintenanceState.PreMaint and deadline is None:
+                raise Exception("Required parameter: deadline is missing!")
+
+            if deadline is not None:
+                try:
+                    maint_start_time = datetime.strptime(deadline, Constants.LEASE_TIME_FORMAT)
+                except Exception as e:
+                    raise Exception(f"Deadline is not in format {Constants.LEASE_TIME_FORMAT}")
+                now = datetime.now(timezone.utc)
+                if maint_start_time < now:
+                    raise Exception(f"Deadline cannot be before current time {now}")
+
             try:
                 actor.prepare(callback_topic=callback_topic)
+                sites = None
+                if site_name is not None:
+                    site_avro = SiteAvro(name=site_name, state=mode_value, workers=workers, deadline=deadline)
+                    sites = [site_avro]
+                    mode_value = None
 
-                status = actor.toggle_maintenance_mode(actor_guid=str(actor.get_guid()),
-                                                       mode=mode, callback_topic=callback_topic)
+                status = actor.toggle_maintenance_mode(actor_guid=str(actor.get_guid()), mode=mode_value, sites=sites,
+                                                       projects=projects, users=users, callback_topic=callback_topic)
+
             except Exception as e:
                 self.logger.error(f"Exception occurred e: {e}")
                 self.logger.error(traceback.format_exc())
@@ -396,7 +427,7 @@ class ManageCommand(ShowCommand):
         if status:
             print(f"Maintenance mode successfully set to {mode}")
         else:
-            print(f"Failure to set maintenance mode error {error}")
+            print(f"Failure to set maintenance mode: [{mode}]; Error: [{error}]")
 
     def delete_dead_slices(self, *, actor_name: str, callback_topic: str, id_token: str, email: str):
 
