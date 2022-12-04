@@ -124,15 +124,17 @@ def removealldead(ctx, email, actor, idtoken, refreshtoken):
               type=click.Choice(['nascent', 'configuring', 'stableok', 'stableerror', 'modifyok', 'modifyerror',
                                  'closing', 'dead'],
                                 case_sensitive=False), required=False)
+@click.option('--format', default='text', help='Output Format Type: text or json', required=False)
 @click.pass_context
-def query(ctx, actor, sliceid, slicename, idtoken, refreshtoken, email, state):
+def query(ctx, actor, sliceid, slicename, idtoken, refreshtoken, email, state, format):
     """ Get slice(s) from an actor
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ShowCommand(logger=KafkaProcessorSingleton.get().logger)
         mgmt_command.get_slices(actor_name=actor, callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                                slice_id=sliceid, slice_name=slicename, id_token=idtoken, email=email, state=state)
+                                slice_id=sliceid, slice_name=slicename, id_token=idtoken, email=email, state=state,
+                                format=format)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
@@ -221,8 +223,15 @@ def remove(ctx, sliverid, actor, idtoken, refreshtoken):
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.option('--email', default=None, help='User Email', required=False)
+@click.option('--site', default=None, help='Site Name', required=False)
+@click.option('--type', default=None,
+              help='Sliver Type, possible allowed values: '
+                   '[VM, L2Bridge, L2STS, L2PTP, FABNetv4, FABNetv6, FABNetv4Ext, FABNetv6Ext, PortMirror, Facility, '
+                   'L3VPN]',
+              required=False)
+@click.option('--format', default='text', help='Output Format Type: text or json', required=False)
 @click.pass_context
-def query(ctx, actor, sliceid, sliverid, state, idtoken, refreshtoken, email):
+def query(ctx, actor, sliceid, sliverid, state, idtoken, refreshtoken, email, site, type, format):
     """ Get sliver(s) from an actor
     """
     try:
@@ -230,7 +239,8 @@ def query(ctx, actor, sliceid, sliverid, state, idtoken, refreshtoken, email):
         mgmt_command = ShowCommand(logger=KafkaProcessorSingleton.get().logger)
         mgmt_command.get_reservations(actor_name=actor,
                                       callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                                      slice_id=sliceid, rid=sliverid, state=state, id_token=idtoken, email=email)
+                                      slice_id=sliceid, rid=sliverid, state=state, id_token=idtoken, email=email,
+                                      site=site, type=type, format=format)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
@@ -303,8 +313,9 @@ def reclaim(ctx, broker: str, am: str, did: str, idtoken, refreshtoken):
               default='all', help='Sliver State', required=False)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
+@click.option('--format', default='text', help='Output Format Type: text or json', required=False)
 @click.pass_context
-def query(ctx, actor, sliceid, did, state, idtoken, refreshtoken):
+def query(ctx, actor, sliceid, did, state, idtoken, refreshtoken, format):
     """ Get delegation(s) from an actor
     """
     try:
@@ -312,7 +323,7 @@ def query(ctx, actor, sliceid, did, state, idtoken, refreshtoken):
         mgmt_command = ShowCommand(logger=KafkaProcessorSingleton.get().logger)
         mgmt_command.get_delegations(actor_name=actor,
                                      callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                                     slice_id=sliceid, did=did, state=state, id_token=idtoken)
+                                     slice_id=sliceid, did=did, state=state, id_token=idtoken, format=format)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
@@ -375,19 +386,57 @@ def maintenance(ctx):
 
 @maintenance.command()
 @click.option('--actor', help='Actor Name', required=True)
-@click.option('--mode', help='Mode value, i.e. True (Enabled) or False (Disabled)', default=True, required=False)
+@click.option('--mode', help='Mode value, i.e. PreMaint, Maint, NoMaint', required=True)
+@click.option('--projects', help='Comma separated list of Project Ids allowed to use TestBed in Maintenance mode',
+              required=False, default=None)
+@click.option('--users', help='Comma separated list of User emails allowed to use TestBed in Maintenance mode',
+              required=False, default=None)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def setmode(ctx, actor: str, mode: bool, idtoken: str, refreshtoken: str):
-    """ Enable/Disable Maintenance Mode for an actor
+def testbed(ctx, actor: str, mode: str, projects: str, users: str, idtoken: str, refreshtoken: str):
+    """ Change Maintenance modes (PreMaint, Maint, NoMaint) for the Testbed
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
         mgmt_command.toggle_maintenance_mode(actor_name=actor,
                                              callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                                             mode=mode, id_token=idtoken)
+                                             mode=mode, projects=projects, users=users, id_token=idtoken)
+        KafkaProcessorSingleton.get().stop()
+    except Exception as e:
+        # traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
+
+
+@maintenance.command()
+@click.option('--actor', help='Actor Name', required=True)
+@click.option('--name', help='Site Name', required=True)
+@click.option('--mode', help='Mode value, i.e. PreMaint, Maint, NoMaint', required=True)
+@click.option('--projects', help='Comma separated list of Project Ids allowed to use TestBed in Maintenance mode',
+              required=False, default=None)
+@click.option('--users', help='Comma separated list of User emails allowed to use TestBed in Maintenance mode',
+              required=False, default=None)
+@click.option('--workers', help='Comma separated list of workers to be marked in Maintenance mode',
+              required=False, default=None)
+@click.option('--deadline',
+              help='Start time that allows new resources to be created or extended up until stated deadline in format: %Y-%m-%d %H:%M:%S %z',
+              required=False, default=None)
+@click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
+@click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
+@click.pass_context
+def site(ctx, actor: str, name: str, mode: str, projects, users, workers: str, deadline: str,
+         idtoken: str, refreshtoken: str):
+    """ Change Maintenance modes (PreMaint, Maint, NoMaint) for a specific Site or a specific worker
+    """
+    try:
+        idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
+        mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
+        mgmt_command.toggle_maintenance_mode(actor_name=actor,
+                                             callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
+                                             mode=mode, projects=projects, users=users,
+                                             site_name=name, workers=workers, deadline=deadline, id_token=idtoken)
+
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
