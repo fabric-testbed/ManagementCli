@@ -4,7 +4,7 @@ setuptools
 urllib3==1.26.5
 six==1.15.0
 packaging==20.8
-certifi==2020.12.5
+certifi==2022.12.7
 attrs==20.3.0
 Jinja2==2.11.3
 MarkupSafe==1.1.1
