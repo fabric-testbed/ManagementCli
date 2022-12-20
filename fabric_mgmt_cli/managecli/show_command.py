@@ -155,9 +155,10 @@ class ShowCommand(Command):
     @staticmethod
     def __print_reservations_json(*, reservations: List[ReservationMng], fields: str):
         res_list = []
-        field_list = None
         if fields is not None:
             field_list = fields.split(",")
+        else:
+            field_list = None
         for reservation in reservations:
             res_dict = {
                 'sliver_id': reservation.reservation_id,

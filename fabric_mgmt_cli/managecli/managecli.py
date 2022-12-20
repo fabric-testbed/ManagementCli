@@ -230,7 +230,7 @@ def remove(ctx, sliverid, actor, idtoken, refreshtoken):
                    'L3VPN]',
               required=False)
 @click.option('--format', default='text', help='Output Format Type: text or json', required=False)
-@click.option('--fields', default='text', help='Comma separated list of fields to be displayed', required=False)
+@click.option('--fields', default=None, help='Comma separated list of fields to be displayed', required=False)
 @click.pass_context
 def query(ctx, actor, sliceid, sliverid, state, idtoken, refreshtoken, email, site, type, format, fields):
     """ Get sliver(s) from an actor
