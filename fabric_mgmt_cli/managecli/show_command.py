@@ -61,13 +61,13 @@ class ShowCommand(Command):
             print("Exception occurred while processing get_slices {}".format(e))
 
     def get_reservations(self, *, actor_name: str, callback_topic: str, slice_id: str, rid: str,
-                         state: str, id_token: str, email: str, site:str, type: str, format: str):
+                         state: str, id_token: str, email: str, site:str, type: str, format: str, fields: str):
         try:
             reservations, error = self.do_get_reservations(actor_name=actor_name, callback_topic=callback_topic,
                                                            slice_id=slice_id, rid=rid, state=state, id_token=id_token,
                                                            email=email, site=site, type=type)
             if reservations is not None and len(reservations) > 0:
-                self.__print_reservations(reservations=reservations, format=format)
+                self.__print_reservations(reservations=reservations, format=format, fields=fields)
             else:
                 print("Status: {}".format(error.get_status()))
         except Exception as e:
@@ -153,51 +153,55 @@ class ShowCommand(Command):
         return None, actor.get_last_error()
 
     @staticmethod
-    def __print_reservations_json(*, reservations: List[ReservationMng]):
+    def __print_reservations_json(*, reservations: List[ReservationMng], fields: str):
         res_list = []
+        if fields is not None:
+            field_list = fields.split(",")
+        else:
+            field_list = None
         for reservation in reservations:
             res_dict = {
                 'sliver_id': reservation.reservation_id,
                 'slice_id': reservation.slice_id
             }
-            if reservation.rtype is not None:
+            if reservation.rtype is not None and (field_list is None or 'type' in field_list):
                 res_dict['type'] = reservation.rtype
 
-            if reservation.rtype is not None:
+            if reservation.rtype is not None and (field_list is None or 'notices' in field_list):
                 res_dict['notices'] = reservation.notices
 
-            if reservation.start is not None:
+            if reservation.start is not None and (field_list is None or 'start' in field_list):
                 res_dict['start'] = ShowCommand.__time_string(milliseconds=reservation.start)
 
-            if reservation.end is not None:
+            if reservation.end is not None and (field_list is None or 'end' in field_list):
                 res_dict['end'] = ShowCommand.__time_string(milliseconds=reservation.end)
 
-            if reservation.requested_end is not None:
+            if reservation.requested_end is not None and (field_list is None or 'requested_end' in field_list):
                 res_dict['requested_end'] = ShowCommand.__time_string(milliseconds=reservation.requested_end)
 
-            if reservation.units is not None:
+            if reservation.units is not None and (field_list is None or 'units' in field_list):
                 res_dict['units'] = reservation.units
 
-            if reservation.state is not None:
+            if reservation.state is not None and (field_list is None or 'state' in field_list):
                 res_dict['state'] = reservation.state
 
-            if reservation.pending_state is not None:
+            if reservation.pending_state is not None and (field_list is None or 'pending_state' in field_list):
                 res_dict['pending_state'] = reservation.pending_state
 
             sliver = reservation.get_sliver()
-            if sliver is not None:
+            if sliver is not None and (field_list is None or 'sliver' in field_list):
                 res_dict['sliver'] = ABCPropertyGraph.sliver_to_dict(sliver)
 
             res_list.append(res_dict)
 
         print(json.dumps(res_list, indent=4))
 
-    def __print_reservations(self, reservations: List[ReservationMng], format: str):
+    def __print_reservations(self, reservations: List[ReservationMng], format: str, fields: str):
         if format == 'text':
             for r in reservations:
                 self.__print_reservation(reservation=r)
         else:
-            self.__print_reservations_json(reservations=reservations)
+            self.__print_reservations_json(reservations=reservations, fields=fields)
 
     @staticmethod
     def __print_reservation(*, reservation: ReservationMng):
