@@ -47,10 +47,10 @@ from fabric_mgmt_cli.managecli.command import Command
 
 class ShowCommand(Command):
     def get_slices(self, *, actor_name: str, callback_topic: str, slice_id: str, slice_name: str, id_token: str,
-                   email: str, state: str, format: str):
+                   email: str, states: str, format: str):
         try:
             slices, error = self.do_get_slices(actor_name=actor_name, callback_topic=callback_topic, slice_id=slice_id,
-                                               slice_name=slice_name, id_token=id_token, email=email, state=state)
+                                               slice_name=slice_name, id_token=id_token, email=email, states=states)
             if slices is not None and len(slices) > 0:
                 self.__print_slices(slices=slices, format=format)
             else:
@@ -61,10 +61,10 @@ class ShowCommand(Command):
             print("Exception occurred while processing get_slices {}".format(e))
 
     def get_reservations(self, *, actor_name: str, callback_topic: str, slice_id: str, rid: str,
-                         state: str, id_token: str, email: str, site:str, type: str, format: str, fields: str):
+                         states: str, id_token: str, email: str, site:str, type: str, format: str, fields: str):
         try:
             reservations, error = self.do_get_reservations(actor_name=actor_name, callback_topic=callback_topic,
-                                                           slice_id=slice_id, rid=rid, state=state, id_token=id_token,
+                                                           slice_id=slice_id, rid=rid, states=states, id_token=id_token,
                                                            email=email, site=site, type=type)
             if reservations is not None and len(reservations) > 0:
                 self.__print_reservations(reservations=reservations, format=format, fields=fields)
@@ -90,7 +90,7 @@ class ShowCommand(Command):
             print("Exception occurred while processing get_delegations {}".format(e))
 
     def do_get_slices(self, *, actor_name: str, callback_topic: str, slice_id: str = None, slice_name: str = None,
-                      id_token: str = None, email: str = None, state: str = None) -> Tuple[List[SliceAvro] or None, Error]:
+                      id_token: str = None, email: str = None, states: str = None) -> Tuple[List[SliceAvro] or None, Error]:
         actor = self.get_actor(actor_name=actor_name)
 
         if actor is None:
@@ -99,8 +99,12 @@ class ShowCommand(Command):
             actor.prepare(callback_topic=callback_topic)
             sid = ID(uid=slice_id) if slice_id is not None else None
             slice_state = None
-            if state is not None:
-                slice_state = [SliceState.translate(state_name=state).value]
+            if states is not None:
+                states_list = states.split(",")
+                for x in states_list:
+                    if slice_state is None:
+                        slice_state = []
+                    slice_state.append(SliceState.translate(state_name=x).value)
 
             result = actor.get_slices(slice_id=sid, slice_name=slice_name, email=email, state=slice_state)
             return result, actor.get_last_error()
@@ -110,7 +114,7 @@ class ShowCommand(Command):
         return None, actor.get_last_error()
 
     def do_get_reservations(self, *, actor_name: str, callback_topic: str, slice_id: str = None, rid: str = None,
-                            state: str = None, id_token: str = None, email: str = None, site: str = None,
+                            states: str = None, id_token: str = None, email: str = None, site: str = None,
                             type: str = None) -> Tuple[List[ReservationMng] or None, Error]:
         actor = self.get_actor(actor_name=actor_name)
 
@@ -121,9 +125,13 @@ class ShowCommand(Command):
             sid = ID(uid=slice_id) if slice_id is not None else None
             reservation_id = ID(uid=rid) if rid is not None else None
             reservation_state = None
-            if state is not None and state != "all":
-                reservation_state = ReservationStates.translate(state_name=state).value
-            return actor.get_reservations(slice_id=sid, rid=reservation_id, state=reservation_state, email=email,
+            if states is not None and states != "all":
+                states_list = states.split(",")
+                for x in states_list:
+                    if reservation_state is not None:
+                        reservation_state = []
+                    reservation_state.append(ReservationStates.translate(state_name=x).value)
+            return actor.get_reservations(slice_id=sid, rid=reservation_id, states=reservation_state, email=email,
                                           site=site, type=type), actor.get_last_error()
         except Exception as e:
             ex_str = traceback.format_exc()

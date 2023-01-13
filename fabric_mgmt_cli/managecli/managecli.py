@@ -120,20 +120,19 @@ def removealldead(ctx, email, actor, idtoken, refreshtoken):
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.option('--email', default=None, help='User email', required=False)
-@click.option('--state',
-              type=click.Choice(['nascent', 'configuring', 'stableok', 'stableerror', 'modifyok', 'modifyerror',
-                                 'closing', 'dead'],
-                                case_sensitive=False), required=False)
+@click.option('--states', help="Comma separated list of the states, possible values: "
+                               "[nascent, configuring, stableok, stableerror, modifyok, modifyerror, closing, dead]",
+                                required=False)
 @click.option('--format', default='text', help='Output Format Type: text or json', required=False)
 @click.pass_context
-def query(ctx, actor, sliceid, slicename, idtoken, refreshtoken, email, state, format):
+def query(ctx, actor, sliceid, slicename, idtoken, refreshtoken, email, states, format):
     """ Get slice(s) from an actor
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ShowCommand(logger=KafkaProcessorSingleton.get().logger)
         mgmt_command.get_slices(actor_name=actor, callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                                slice_id=sliceid, slice_name=slicename, id_token=idtoken, email=email, state=state,
+                                slice_id=sliceid, slice_name=slicename, id_token=idtoken, email=email, states=states,
                                 format=format)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
@@ -215,10 +214,8 @@ def remove(ctx, sliverid, actor, idtoken, refreshtoken):
 @click.option('--actor', help='Actor Name', required=True)
 @click.option('--sliceid', default=None, help='Slice Id', required=False)
 @click.option('--sliverid', default=None, help='Sliver Id', required=False)
-@click.option('--state',
-              type=click.Choice(['nascent', 'ticketed', 'active', 'activeticketed', 'closed', 'closewait', 'failed',
-                                 'unknown', 'all'],
-                                case_sensitive=False),
+@click.option('--states', "Comma separated list of states, possible values: "
+                          "[nascent, ticketed, active, activeticketed, closed, closewait, failed, unknown, all]",
               default='all', help='Sliver State', required=False)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
@@ -232,7 +229,7 @@ def remove(ctx, sliverid, actor, idtoken, refreshtoken):
 @click.option('--format', default='text', help='Output Format Type: text or json', required=False)
 @click.option('--fields', default=None, help='Comma separated list of fields to be displayed', required=False)
 @click.pass_context
-def query(ctx, actor, sliceid, sliverid, state, idtoken, refreshtoken, email, site, type, format, fields):
+def query(ctx, actor, sliceid, sliverid, states, idtoken, refreshtoken, email, site, type, format, fields):
     """ Get sliver(s) from an actor
     """
     try:
@@ -240,7 +237,7 @@ def query(ctx, actor, sliceid, sliverid, state, idtoken, refreshtoken, email, si
         mgmt_command = ShowCommand(logger=KafkaProcessorSingleton.get().logger)
         mgmt_command.get_reservations(actor_name=actor,
                                       callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                                      slice_id=sliceid, rid=sliverid, state=state, id_token=idtoken, email=email,
+                                      slice_id=sliceid, rid=sliverid, states=states, id_token=idtoken, email=email,
                                       site=site, type=type, format=format, fields=fields)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
@@ -455,7 +452,27 @@ def site(ctx, actor: str, name: str, mode: str, projects, users, workers: str, d
     except Exception as e:
         # traceback.print_exc()
         click.echo('Error occurred: {}'.format(e))
+'''
 
+@maintenance.command()
+@click.option('--actor', help='Actor Name', required=True)
+@click.option('--site', help='Site Name', required=False)
+@click.pass_context
+def query(ctx, actor: str, site: str):
+    """ Query Maintenance Status for Testbed/Site
+    """
+    try:
+        idtoken = KafkaProcessorSingleton.get().start(ignore_tokens=True)
+        mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
+        mgmt_command.get_maintenance_mode(actor_name=actor,
+                                          callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
+                                          site=site)
+
+        KafkaProcessorSingleton.get().stop()
+    except Exception as e:
+        # traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
+'''
 
 managecli.add_command(slices)
 managecli.add_command(slivers)
