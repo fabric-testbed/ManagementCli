@@ -122,7 +122,7 @@ def removealldead(ctx, email, actor, idtoken, refreshtoken):
 @click.option('--email', default=None, help='User email', required=False)
 @click.option('--states', help="Comma separated list of the states, possible values: "
                                "[nascent, configuring, stableok, stableerror, modifyok, modifyerror, closing, dead]",
-                                required=False)
+              default=None, required=False)
 @click.option('--format', default='text', help='Output Format Type: text or json', required=False)
 @click.pass_context
 def query(ctx, actor, sliceid, slicename, idtoken, refreshtoken, email, states, format):
@@ -214,9 +214,9 @@ def remove(ctx, sliverid, actor, idtoken, refreshtoken):
 @click.option('--actor', help='Actor Name', required=True)
 @click.option('--sliceid', default=None, help='Slice Id', required=False)
 @click.option('--sliverid', default=None, help='Sliver Id', required=False)
-@click.option('--states', "Comma separated list of states, possible values: "
-                          "[nascent, ticketed, active, activeticketed, closed, closewait, failed, unknown, all]",
-              default='all', help='Sliver State', required=False)
+@click.option('--states', default=None, help='Sliver State, Comma separated list of states, possible values: '
+                                             '[nascent, ticketed, active, activeticketed, closed, closewait, '
+                                             'failed, unknown, all]', required=False)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.option('--email', default=None, help='User Email', required=False)
@@ -305,15 +305,15 @@ def reclaim(ctx, broker: str, am: str, did: str, idtoken, refreshtoken):
 @click.option('--actor', help='Actor Name', required=True)
 @click.option('--sliceid', default=None, help='Slice Id', required=False)
 @click.option('--did', default=None, help='Delegation Id', required=False)
-@click.option('--state',
-              type=click.Choice(['nascent', 'delegated', 'reclaimed', 'closed', 'failed', 'all'],
-                                case_sensitive=False),
-              default='all', help='Sliver State', required=False)
+@click.option('--states',
+              default=None, help="Comma separated list of the states, possible values: "
+                                 "[nascent, delegated, reclaimed, failed, closed]",
+              required=False)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.option('--format', default='text', help='Output Format Type: text or json', required=False)
 @click.pass_context
-def query(ctx, actor, sliceid, did, state, idtoken, refreshtoken, format):
+def query(ctx, actor, sliceid, did, states, idtoken, refreshtoken, format):
     """ Get delegation(s) from an actor
     """
     try:
@@ -321,7 +321,7 @@ def query(ctx, actor, sliceid, did, state, idtoken, refreshtoken, format):
         mgmt_command = ShowCommand(logger=KafkaProcessorSingleton.get().logger)
         mgmt_command.get_delegations(actor_name=actor,
                                      callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                                     slice_id=sliceid, did=did, state=state, id_token=idtoken, format=format)
+                                     slice_id=sliceid, did=did, states=states, id_token=idtoken, format=format)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()

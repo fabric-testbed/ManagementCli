@@ -75,11 +75,11 @@ class ShowCommand(Command):
             self.logger.error(ex_str)
             print("Exception occurred while processing get_reservations {}".format(e))
 
-    def get_delegations(self, *, actor_name: str, callback_topic: str, slice_id: str, did: str, state: str,
+    def get_delegations(self, *, actor_name: str, callback_topic: str, slice_id: str, did: str, states: str,
                         id_token: str, format: str):
         try:
             delegations, error = self.do_get_delegations(actor_name=actor_name, callback_topic=callback_topic,
-                                                         slice_id=slice_id, did=did, state=state, id_token=id_token)
+                                                         slice_id=slice_id, did=did, states=states, id_token=id_token)
             if delegations is not None and len(delegations) > 0:
                 self.__print_delegations(delegations=delegations, format=format)
             else:
@@ -98,15 +98,15 @@ class ShowCommand(Command):
         try:
             actor.prepare(callback_topic=callback_topic)
             sid = ID(uid=slice_id) if slice_id is not None else None
-            slice_state = None
+            slice_states = None
             if states is not None:
                 states_list = states.split(",")
                 for x in states_list:
-                    if slice_state is None:
-                        slice_state = []
-                    slice_state.append(SliceState.translate(state_name=x).value)
+                    if slice_states is None:
+                        slice_states = []
+                    slice_states.append(SliceState.translate(state_name=x).value)
 
-            result = actor.get_slices(slice_id=sid, slice_name=slice_name, email=email, state=slice_state)
+            result = actor.get_slices(slice_id=sid, slice_name=slice_name, email=email, states=slice_states)
             return result, actor.get_last_error()
         except Exception:
             ex_str = traceback.format_exc()
@@ -124,14 +124,14 @@ class ShowCommand(Command):
             actor.prepare(callback_topic=callback_topic)
             sid = ID(uid=slice_id) if slice_id is not None else None
             reservation_id = ID(uid=rid) if rid is not None else None
-            reservation_state = None
-            if states is not None and states != "all":
+            reservation_states = None
+            if states is not None:
                 states_list = states.split(",")
                 for x in states_list:
-                    if reservation_state is not None:
-                        reservation_state = []
-                    reservation_state.append(ReservationStates.translate(state_name=x).value)
-            return actor.get_reservations(slice_id=sid, rid=reservation_id, states=reservation_state, email=email,
+                    if reservation_states is not None:
+                        reservation_states = []
+                    reservation_states.append(ReservationStates.translate(state_name=x).value)
+            return actor.get_reservations(slice_id=sid, rid=reservation_id, states=reservation_states, email=email,
                                           site=site, type=type), actor.get_last_error()
         except Exception as e:
             ex_str = traceback.format_exc()
@@ -139,7 +139,7 @@ class ShowCommand(Command):
         return None, actor.get_last_error()
 
     def do_get_delegations(self, *, actor_name: str, callback_topic: str, slice_id: str = None, did: str = None,
-                           state: str = None, id_token: str = None) -> Tuple[List[DelegationAvro] or None, Error]:
+                           states: str = None, id_token: str = None) -> Tuple[List[DelegationAvro] or None, Error]:
         actor = self.get_actor(actor_name=actor_name)
 
         if actor is None:
@@ -149,11 +149,14 @@ class ShowCommand(Command):
             sid = None
             if slice_id is not None:
                 sid = ID(uid=slice_id)
-            delegation_state = None
-            if state is not None and state != "all":
-                delegation_state = DelegationState.translate(state_name=state).value
+            delegation_states = None
+            if states is not None:
+                for x in states:
+                    if delegation_states is None:
+                        delegation_states = []
+                    delegation_states.append(DelegationState.translate(state_name=x).value)
             return actor.get_delegations(delegation_id=did, slice_id=sid,
-                                         state=delegation_state), actor.get_last_error()
+                                         states=delegation_states), actor.get_last_error()
         except Exception as e:
             self.logger.error(f"Exception occurred while fetching delegations: e {e}")
             self.logger.error(traceback.format_exc())
