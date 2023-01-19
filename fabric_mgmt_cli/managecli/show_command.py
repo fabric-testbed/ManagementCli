@@ -37,6 +37,7 @@ from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.utils import sliver_to_str
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
+from fabric_mb.message_bus.messages.site_avro import SiteAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.abc_property_graph import ABCPropertyGraph
 from fim.slivers.network_node import NodeSliver
@@ -344,3 +345,43 @@ class ShowCommand(Command):
                 self.__print_delegation(dlg_object=d)
         else:
             self.__print_delegations_json(delegations=delegations)
+
+    def do_get_sites(self, *, actor_name: str, callback_topic: str, sites: str) -> Tuple[List[SiteAvro] or None, Error]:
+        actor = self.get_actor(actor_name=actor_name)
+
+        if actor is None:
+            raise Exception("Invalid arguments actor {} not found".format(actor_name))
+        try:
+            actor.prepare(callback_topic=callback_topic)
+            return actor.get_sites(site=sites), actor.get_last_error()
+        except Exception as e:
+            self.logger.error(f"Exception occurred while fetching delegations: e {e}")
+            self.logger.error(traceback.format_exc())
+            traceback.print_exc()
+        return None, actor.get_last_error()
+
+    def get_sites(self, *, actor_name: str, callback_topic: str, sites:str):
+        try:
+            sites, error = self.do_get_sites(actor_name=actor_name, callback_topic=callback_topic, sites=sites)
+            if sites is not None and len(sites) > 0:
+                self.__print_sites(sites=sites, format=format)
+            else:
+                print("Status: {}".format(error.get_status()))
+        except Exception as e:
+            ex_str = traceback.format_exc()
+            self.logger.error(ex_str)
+            print("Exception occurred while processing get_delegations {}".format(e))
+
+    def __print_sites(self, *, sites: List[SiteAvro], format: str):
+        if format == 'text':
+            for s in sites:
+                print(s)
+        else:
+            site_list = []
+            for s in sites:
+                s_dict = {
+                    'name': s.get_name(),
+                    'maint_info': s.get_maint_info().to_json()
+                }
+                site_list.append(s_dict)
+            print(json.dumps(site_list, indent=4))

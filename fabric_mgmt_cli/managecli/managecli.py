@@ -452,27 +452,26 @@ def site(ctx, actor: str, name: str, mode: str, projects, users, workers: str, d
     except Exception as e:
         # traceback.print_exc()
         click.echo('Error occurred: {}'.format(e))
-'''
 
 @maintenance.command()
 @click.option('--actor', help='Actor Name', required=True)
-@click.option('--site', help='Site Name', required=False)
+@click.option('--sites', help='Site Names, Comma separated list of the site names or ALL for entire testbed', required=False)
 @click.pass_context
-def query(ctx, actor: str, site: str):
+def query(ctx, actor: str, sites: str):
     """ Query Maintenance Status for Testbed/Site
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(ignore_tokens=True)
-        mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
-        mgmt_command.get_maintenance_mode(actor_name=actor,
-                                          callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                                          site=site)
+        mgmt_command = ShowCommand(logger=KafkaProcessorSingleton.get().logger)
+        mgmt_command.get_sites(actor_name=actor,
+                               callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
+                               sites=sites)
 
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
         click.echo('Error occurred: {}'.format(e))
-'''
+
 
 managecli.add_command(slices)
 managecli.add_command(slivers)
