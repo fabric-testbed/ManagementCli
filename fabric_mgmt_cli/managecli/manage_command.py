@@ -369,7 +369,7 @@ class ManageCommand(ShowCommand):
                                 users: str = None, site_name: str = None, workers: str = None, deadline: str = None,
                                 expected_end: str = None, id_token: str = None):
         """
-        Claim delegations
+        Toggle Maintenance Mode
         @param actor_name actor name
         @param callback_topic callback topic
         @param state Maintenance State

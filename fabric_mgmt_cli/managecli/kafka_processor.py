@@ -193,7 +193,7 @@ class KafkaProcessor:
         if refresh_token is not None:
             try:
                 proxy = CredmgrProxy(credmgr_host=self.config_processor.get_credmgr_host())
-                tokens = proxy.refresh(project_name="all", scope="all", refresh_token=refresh_token)
+                tokens = proxy.refresh(project_id=None, scope="all", refresh_token=refresh_token)
                 id_token = tokens.get('id_token', None)
             except Exception as e:
                 raise TokenException('Not a valid refresh_token! Error: {}'.format(e))
@@ -205,7 +205,7 @@ class KafkaProcessor:
 
         return id_token
 
-    def start(self, id_token: str, refresh_token: str, ignore_tokens: bool = False) -> str:
+    def start(self, id_token: str = None, refresh_token: str = None, ignore_tokens: bool = False) -> str:
         """
         Start Synchronous Kafka Processor
         @param id_token identity token

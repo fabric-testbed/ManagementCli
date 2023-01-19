@@ -247,11 +247,11 @@ $ fabric-mgmt-cli maintenance site --name RENC --actor orchestrator --mode PreMa
 ```
 Move Worker in Maintenance Mode.
 ```
-$ fabric-mgmt-cli maintenance site --name RENC --actor orchestrator --mode Maint
+$ fabric-mgmt-cli maintenance site --name RENC --actor orchestrator --mode Maint --workers renc-w1.fabric-testbed.net
 ```
 Move Worker in Active Mode
 ```
-$ fabric-mgmt-cli maintenance site --name RENC --actor orchestrator --mode Active
+$ fabric-mgmt-cli maintenance site --name RENC --actor orchestrator --mode Active --workers renc-w1.fabric-testbed.net
 ```
 
 ### Network Management Commands

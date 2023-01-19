@@ -37,6 +37,7 @@ from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.utils import sliver_to_str
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
+from fabric_mb.message_bus.messages.site_avro import SiteAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.abc_property_graph import ABCPropertyGraph
 from fim.slivers.network_node import NodeSliver
@@ -47,10 +48,10 @@ from fabric_mgmt_cli.managecli.command import Command
 
 class ShowCommand(Command):
     def get_slices(self, *, actor_name: str, callback_topic: str, slice_id: str, slice_name: str, id_token: str,
-                   email: str, state: str, format: str):
+                   email: str, states: str, format: str):
         try:
             slices, error = self.do_get_slices(actor_name=actor_name, callback_topic=callback_topic, slice_id=slice_id,
-                                               slice_name=slice_name, id_token=id_token, email=email, state=state)
+                                               slice_name=slice_name, id_token=id_token, email=email, states=states)
             if slices is not None and len(slices) > 0:
                 self.__print_slices(slices=slices, format=format)
             else:
@@ -61,10 +62,10 @@ class ShowCommand(Command):
             print("Exception occurred while processing get_slices {}".format(e))
 
     def get_reservations(self, *, actor_name: str, callback_topic: str, slice_id: str, rid: str,
-                         state: str, id_token: str, email: str, site:str, type: str, format: str, fields: str):
+                         states: str, id_token: str, email: str, site:str, type: str, format: str, fields: str):
         try:
             reservations, error = self.do_get_reservations(actor_name=actor_name, callback_topic=callback_topic,
-                                                           slice_id=slice_id, rid=rid, state=state, id_token=id_token,
+                                                           slice_id=slice_id, rid=rid, states=states, id_token=id_token,
                                                            email=email, site=site, type=type)
             if reservations is not None and len(reservations) > 0:
                 self.__print_reservations(reservations=reservations, format=format, fields=fields)
@@ -75,11 +76,11 @@ class ShowCommand(Command):
             self.logger.error(ex_str)
             print("Exception occurred while processing get_reservations {}".format(e))
 
-    def get_delegations(self, *, actor_name: str, callback_topic: str, slice_id: str, did: str, state: str,
+    def get_delegations(self, *, actor_name: str, callback_topic: str, slice_id: str, did: str, states: str,
                         id_token: str, format: str):
         try:
             delegations, error = self.do_get_delegations(actor_name=actor_name, callback_topic=callback_topic,
-                                                         slice_id=slice_id, did=did, state=state, id_token=id_token)
+                                                         slice_id=slice_id, did=did, states=states, id_token=id_token)
             if delegations is not None and len(delegations) > 0:
                 self.__print_delegations(delegations=delegations, format=format)
             else:
@@ -90,7 +91,7 @@ class ShowCommand(Command):
             print("Exception occurred while processing get_delegations {}".format(e))
 
     def do_get_slices(self, *, actor_name: str, callback_topic: str, slice_id: str = None, slice_name: str = None,
-                      id_token: str = None, email: str = None, state: str = None) -> Tuple[List[SliceAvro] or None, Error]:
+                      id_token: str = None, email: str = None, states: str = None) -> Tuple[List[SliceAvro] or None, Error]:
         actor = self.get_actor(actor_name=actor_name)
 
         if actor is None:
@@ -98,11 +99,15 @@ class ShowCommand(Command):
         try:
             actor.prepare(callback_topic=callback_topic)
             sid = ID(uid=slice_id) if slice_id is not None else None
-            slice_state = None
-            if state is not None:
-                slice_state = [SliceState.translate(state_name=state).value]
+            slice_states = None
+            if states is not None:
+                states_list = states.split(",")
+                for x in states_list:
+                    if slice_states is None:
+                        slice_states = []
+                    slice_states.append(SliceState.translate(state_name=x).value)
 
-            result = actor.get_slices(slice_id=sid, slice_name=slice_name, email=email, state=slice_state)
+            result = actor.get_slices(slice_id=sid, slice_name=slice_name, email=email, states=slice_states)
             return result, actor.get_last_error()
         except Exception:
             ex_str = traceback.format_exc()
@@ -110,7 +115,7 @@ class ShowCommand(Command):
         return None, actor.get_last_error()
 
     def do_get_reservations(self, *, actor_name: str, callback_topic: str, slice_id: str = None, rid: str = None,
-                            state: str = None, id_token: str = None, email: str = None, site: str = None,
+                            states: str = None, id_token: str = None, email: str = None, site: str = None,
                             type: str = None) -> Tuple[List[ReservationMng] or None, Error]:
         actor = self.get_actor(actor_name=actor_name)
 
@@ -120,10 +125,14 @@ class ShowCommand(Command):
             actor.prepare(callback_topic=callback_topic)
             sid = ID(uid=slice_id) if slice_id is not None else None
             reservation_id = ID(uid=rid) if rid is not None else None
-            reservation_state = None
-            if state is not None and state != "all":
-                reservation_state = ReservationStates.translate(state_name=state).value
-            return actor.get_reservations(slice_id=sid, rid=reservation_id, state=reservation_state, email=email,
+            reservation_states = None
+            if states is not None:
+                states_list = states.split(",")
+                for x in states_list:
+                    if reservation_states is not None:
+                        reservation_states = []
+                    reservation_states.append(ReservationStates.translate(state_name=x).value)
+            return actor.get_reservations(slice_id=sid, rid=reservation_id, states=reservation_states, email=email,
                                           site=site, type=type), actor.get_last_error()
         except Exception as e:
             ex_str = traceback.format_exc()
@@ -131,7 +140,7 @@ class ShowCommand(Command):
         return None, actor.get_last_error()
 
     def do_get_delegations(self, *, actor_name: str, callback_topic: str, slice_id: str = None, did: str = None,
-                           state: str = None, id_token: str = None) -> Tuple[List[DelegationAvro] or None, Error]:
+                           states: str = None, id_token: str = None) -> Tuple[List[DelegationAvro] or None, Error]:
         actor = self.get_actor(actor_name=actor_name)
 
         if actor is None:
@@ -141,11 +150,14 @@ class ShowCommand(Command):
             sid = None
             if slice_id is not None:
                 sid = ID(uid=slice_id)
-            delegation_state = None
-            if state is not None and state != "all":
-                delegation_state = DelegationState.translate(state_name=state).value
+            delegation_states = None
+            if states is not None:
+                for x in states:
+                    if delegation_states is None:
+                        delegation_states = []
+                    delegation_states.append(DelegationState.translate(state_name=x).value)
             return actor.get_delegations(delegation_id=did, slice_id=sid,
-                                         state=delegation_state), actor.get_last_error()
+                                         states=delegation_states), actor.get_last_error()
         except Exception as e:
             self.logger.error(f"Exception occurred while fetching delegations: e {e}")
             self.logger.error(traceback.format_exc())
@@ -333,3 +345,43 @@ class ShowCommand(Command):
                 self.__print_delegation(dlg_object=d)
         else:
             self.__print_delegations_json(delegations=delegations)
+
+    def do_get_sites(self, *, actor_name: str, callback_topic: str, sites: str) -> Tuple[List[SiteAvro] or None, Error]:
+        actor = self.get_actor(actor_name=actor_name)
+
+        if actor is None:
+            raise Exception("Invalid arguments actor {} not found".format(actor_name))
+        try:
+            actor.prepare(callback_topic=callback_topic)
+            return actor.get_sites(site=sites), actor.get_last_error()
+        except Exception as e:
+            self.logger.error(f"Exception occurred while fetching delegations: e {e}")
+            self.logger.error(traceback.format_exc())
+            traceback.print_exc()
+        return None, actor.get_last_error()
+
+    def get_sites(self, *, actor_name: str, callback_topic: str, sites:str):
+        try:
+            sites, error = self.do_get_sites(actor_name=actor_name, callback_topic=callback_topic, sites=sites)
+            if sites is not None and len(sites) > 0:
+                self.__print_sites(sites=sites, format=format)
+            else:
+                print("Status: {}".format(error.get_status()))
+        except Exception as e:
+            ex_str = traceback.format_exc()
+            self.logger.error(ex_str)
+            print("Exception occurred while processing get_delegations {}".format(e))
+
+    def __print_sites(self, *, sites: List[SiteAvro], format: str):
+        if format == 'text':
+            for s in sites:
+                print(s)
+        else:
+            site_list = []
+            for s in sites:
+                s_dict = {
+                    'name': s.get_name(),
+                    'maint_info': s.get_maint_info().to_json()
+                }
+                site_list.append(s_dict)
+            print(json.dumps(site_list, indent=4))
