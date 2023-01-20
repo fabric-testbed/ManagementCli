@@ -24,14 +24,18 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import traceback
+from datetime import datetime, timezone
 from typing import Tuple
 
 from fabric_cf.actor.core.apis.abc_delegation import DelegationState
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
 from fabric_cf.actor.core.manage.error import Error
 from fabric_cf.actor.core.util.id import ID
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
+from fabric_mb.message_bus.messages.site_avro import SiteAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
+from fim.slivers.maintenance_mode import MaintenanceInfo, MaintenanceEntry, MaintenanceState
 
 from fabric_mgmt_cli.managecli.show_command import ShowCommand
 
@@ -361,13 +365,20 @@ class ManageCommand(ShowCommand):
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())
 
-    def toggle_maintenance_mode(self, *, actor_name: str, callback_topic: str, mode: bool = False,
-                                id_token: str = None):
+    def toggle_maintenance_mode(self, *, actor_name: str, callback_topic: str, state: str, projects: str = None,
+                                users: str = None, site_name: str = None, workers: str = None, deadline: str = None,
+                                expected_end: str = None, id_token: str = None):
         """
-        Claim delegations
+        Toggle Maintenance Mode
         @param actor_name actor name
         @param callback_topic callback topic
-        @param mode mode
+        @param state Maintenance State
+        @param projects comma separated list of project_ids allowed in maintenance
+        @param users comma separated list of email address of the users allowed in maintenance
+        @param site_name site name
+        @param workers comma separated list of specific workers on a site which are in maintenance
+        @param deadline start time for the Maintenance
+        @param expected_end Expected End time for the Maintenance
         @param id_token id token
         """
         status = False
@@ -378,11 +389,49 @@ class ManageCommand(ShowCommand):
             if actor is None:
                 raise Exception(f"Invalid arguments! {actor_name} not found")
 
+            mode = MaintenanceState.from_string(state)
+
+            if mode == MaintenanceState.PreMaint and deadline is None:
+                raise Exception("Required parameter: deadline is missing!")
+
+            if deadline is not None:
+                try:
+                    maint_start_time = datetime.fromisoformat(deadline)
+                except Exception as e:
+                    raise Exception(f"Deadline is not in ISO 8601 format")
+                now = datetime.now(timezone.utc)
+                if maint_start_time < now:
+                    raise Exception(f"Deadline cannot be before current time {now}")
+
+            if expected_end is not None:
+                try:
+                    expected_end_time = datetime.fromisoformat(deadline)
+                except Exception as e:
+                    raise Exception(f"Expected end is not in ISO 8601 format")
+                now = datetime.now(timezone.utc)
+                if expected_end_time < now:
+                    raise Exception(f"Expected end cannot be before current time {now}")
+
             try:
                 actor.prepare(callback_topic=callback_topic)
+                sites = None
+                if site_name is None:
+                    site_name = Constants.ALL
 
-                status = actor.toggle_maintenance_mode(actor_guid=str(actor.get_guid()),
-                                                       mode=mode, callback_topic=callback_topic)
+                worker_list = [site_name]
+                if workers is not None:
+                    worker_list = workers.split(",")
+
+                maint_info = MaintenanceInfo()
+                for w in worker_list:
+                    entry = MaintenanceEntry(state=state, deadline=deadline, expected_end=expected_end)
+                    maint_info.add(w, entry)
+                site_avro = SiteAvro(name=site_name, maint_info=maint_info)
+                sites = [site_avro]
+
+                status = actor.toggle_maintenance_mode(actor_guid=str(actor.get_guid()), sites=sites, projects=projects,
+                                                       users=users, callback_topic=callback_topic)
+
             except Exception as e:
                 self.logger.error(f"Exception occurred e: {e}")
                 self.logger.error(traceback.format_exc())
@@ -394,9 +443,9 @@ class ManageCommand(ShowCommand):
             error = str(e)
 
         if status:
-            print(f"Maintenance mode successfully set to {mode}")
+            print(f"Maintenance mode successfully set to {state}")
         else:
-            print(f"Failure to set maintenance mode error {error}")
+            print(f"Failure to set maintenance mode: [{state}]; Error: [{error}]")
 
     def delete_dead_slices(self, *, actor_name: str, callback_topic: str, id_token: str, email: str):
 
