@@ -263,7 +263,7 @@ class ShowCommand(Command):
         """
         print("")
         print(f"Slice Name: {slice_object.get_slice_name()} Slice ID: {slice_object.get_slice_id()} "
-              f"Project ID: {slice_object.get_project_id()}")
+              f"Project ID: {slice_object.get_project_id()} Project Name: {slice_object.get_project_name()} ")
         if slice_object.get_graph_id() is not None:
             print(f"Graph ID: {slice_object.get_graph_id()}")
 
@@ -287,6 +287,7 @@ class ShowCommand(Command):
             slc_dict = {'name': slice_object.get_slice_name(),
                         'slice_id': slice_object.get_slice_id(),
                         'project_id': slice_object.get_project_id(),
+                        'project_name': slice_object.get_project_name(),
                         'graph_id': slice_object.get_graph_id(),
                         'owner': slice_object.get_owner().get_email(),
                         'state': str(SliceState(slice_object.get_state())),
