@@ -106,6 +106,7 @@ class ShowCommand(Command):
                 for x in states_list:
                     if slice_states is None:
                         slice_states = []
+                    x = x.strip()
                     slice_states.append(SliceState.translate(state_name=x).value)
 
             result = actor.get_slices(slice_id=sid, slice_name=slice_name, email=email, states=slice_states)
@@ -132,6 +133,7 @@ class ShowCommand(Command):
                 for x in states_list:
                     if reservation_states is None:
                         reservation_states = []
+                    x = x.strip()
                     reservation_states.append(ReservationStates.translate(state_name=x).value)
             return actor.get_reservations(slice_id=sid, rid=reservation_id, states=reservation_states, email=email,
                                           site=site, type=type), actor.get_last_error()
@@ -156,6 +158,7 @@ class ShowCommand(Command):
                 for x in states:
                     if delegation_states is None:
                         delegation_states = []
+                    x = x.strip()
                     delegation_states.append(DelegationState.translate(state_name=x).value)
             return actor.get_delegations(delegation_id=did, slice_id=sid,
                                          states=delegation_states), actor.get_last_error()
