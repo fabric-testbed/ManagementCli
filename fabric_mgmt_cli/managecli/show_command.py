@@ -36,6 +36,7 @@ from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.utils import sliver_to_str
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
+from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.site_avro import SiteAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
@@ -129,7 +130,7 @@ class ShowCommand(Command):
             if states is not None:
                 states_list = states.split(",")
                 for x in states_list:
-                    if reservation_states is not None:
+                    if reservation_states is None:
                         reservation_states = []
                     reservation_states.append(ReservationStates.translate(state_name=x).value)
             return actor.get_reservations(slice_id=sid, rid=reservation_id, states=reservation_states, email=email,
@@ -233,6 +234,11 @@ class ShowCommand(Command):
         if reservation.units is not None or reservation.state is not None or reservation.pending_state is not None:
             print(f"Units: {reservation.units} State: {ReservationStates(reservation.state)} "
                   f"Pending State: {ReservationPendingStates(reservation.pending_state)}")
+
+        if isinstance(reservation, LeaseReservationAvro) and reservation.redeem_processors is not None:
+            print(f"Predecessors")
+            for x in reservation.redeem_processors:
+                print(x.get_reservation_id())
 
         sliver = reservation.get_sliver()
         if sliver is not None:

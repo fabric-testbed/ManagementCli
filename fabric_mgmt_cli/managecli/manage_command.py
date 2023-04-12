@@ -333,8 +333,15 @@ class ManageCommand(ShowCommand):
                 raise Exception("Invalid arguments am_actor {} or broker_actor {} not found".format(am_actor,
                                                                                                     broker_actor))
 
-            delegations, error = self.do_get_delegations(actor_name=am, callback_topic=callback_topic, did=did,
-                                                         id_token=id_token)
+            if did is not None:
+                delegations, error = self.do_get_delegations(actor_name=am, callback_topic=callback_topic, did=did,
+                                                             id_token=id_token)
+            else:
+                d = DelegationAvro()
+                d.delegation_id = did
+                d.state = DelegationState.Delegated.value
+                delegations = [d]
+
             if delegations is None:
                 print("Error occurred while getting delegations for actor: {}".format(am))
                 self.print_result(status=error.get_status())
@@ -551,11 +558,52 @@ class ManageCommand(ShowCommand):
         @param id_token identity token
         """
         try:
-            result, error = self.do_remove_delegation(did=did, actor_name=actor_name, callback_topic=callback_topic,
-                                                      id_token=id_token)
+            result, error = self.do_remove_delegation(did=did, actor_name=actor_name,
+                                                      callback_topic=callback_topic, id_token=id_token)
             print(result)
             if result is False:
                 self.print_result(status=error.get_status())
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())
+
+    def do_audit(self, *, oc_name: str, br_name: str, am_name: str, site_name: str, slice_id: str,
+                 sliver_id: str, callback_topic: str, sliver_type: str):
+        if oc_name is None and br_name is None and am_name is None:
+            raise Exception(f"Invalid arguments; must specify at least two actors")
+
+        oc_slivers = []
+        br_slivers = []
+        am_slivers = []
+        if oc_name is not None:
+            oc_slivers, error = self.do_get_reservations(actor_name=oc_name, site=site_name,
+                                                         slice_id=slice_id, rid=sliver_id,
+                                                         callback_topic=callback_topic,
+                                                         type=sliver_type)
+            if oc_slivers is None:
+                print("Status: {}".format(error.get_status()))
+                return
+
+        if br_name is not None:
+            br_slivers, error = self.do_get_reservations(actor_name=br_name, site=site_name,
+                                                         slice_id=slice_id, rid=sliver_id,
+                                                         callback_topic=callback_topic,
+                                                         type=sliver_type)
+
+            if br_slivers is None:
+                print("Status: {}".format(error.get_status()))
+                return
+
+        if am_name is not None:
+            am_slivers, error = self.do_get_reservations(actor_name=am_name, site=site_name,
+                                                         slice_id=slice_id, rid=sliver_id,
+                                                         callback_topic=callback_topic,
+                                                         type=sliver_type)
+
+            if am_slivers is None:
+                print("Status: {}".format(error.get_status()))
+                return
+
+        diff1 = set(oc_slivers) - set(br_slivers) - set(am_slivers)
+
+        print(f"Difference -- {diff1}")

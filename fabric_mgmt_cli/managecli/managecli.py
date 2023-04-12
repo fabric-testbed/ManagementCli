@@ -473,6 +473,34 @@ def query(ctx, actor: str, sites: str):
         click.echo('Error occurred: {}'.format(e))
 
 
+@maintenance.command()
+@click.option('--oc', help='Orchestrator Name', required=True)
+@click.option('--broker', help='Broker Name', required=True)
+@click.option('--am', help='Am Name', required=True)
+@click.option('--sliceid', help='Slice Id', required=False)
+@click.option('--sliverid', help='Sliver Id', required=False)
+@click.option('--site', help='Site Name', required=False)
+@click.option('--type', default=None,
+              help='Sliver Type, possible allowed values: '
+                   '[VM, L2Bridge, L2STS, L2PTP, FABNetv4, FABNetv6, FABNetv4Ext, '
+                   'FABNetv6Ext, PortMirror, Facility, L3VPN]',
+              required=False)
+@click.pass_context
+def audit(ctx, oc: str, broker: str, am: str, sliceid: str, sliverid: str, site: str, type: str):
+    """ Query Maintenance Status for Testbed/Site
+    """
+    try:
+        KafkaProcessorSingleton.get().start(ignore_tokens=True)
+        mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
+        mgmt_command.do_audit(oc_name=oc, br_name=broker, am_name=am, slice_id=sliceid,
+                              sliver_id=sliverid, site_name=site, sliver_type=type,
+                              callback_topic=KafkaProcessorSingleton.get().get_callback_topic())
+        KafkaProcessorSingleton.get().stop()
+    except Exception as e:
+        # traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
+
+
 managecli.add_command(slices)
 managecli.add_command(slivers)
 managecli.add_command(delegations)
