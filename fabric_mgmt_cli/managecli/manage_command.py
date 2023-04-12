@@ -575,11 +575,12 @@ class ManageCommand(ShowCommand):
         oc_slivers = []
         br_slivers = []
         am_slivers = []
+        states = "nascent, ticketed, active, activeticketed, failed"
         if oc_name is not None:
             oc_slivers, error = self.do_get_reservations(actor_name=oc_name, site=site_name,
                                                          slice_id=slice_id, rid=sliver_id,
                                                          callback_topic=callback_topic,
-                                                         type=sliver_type)
+                                                         type=sliver_type, states=states)
             if oc_slivers is None:
                 print("Status: {}".format(error.get_status()))
                 return
@@ -588,7 +589,7 @@ class ManageCommand(ShowCommand):
             br_slivers, error = self.do_get_reservations(actor_name=br_name, site=site_name,
                                                          slice_id=slice_id, rid=sliver_id,
                                                          callback_topic=callback_topic,
-                                                         type=sliver_type)
+                                                         type=sliver_type, states=states)
 
             if br_slivers is None:
                 print("Status: {}".format(error.get_status()))
@@ -598,7 +599,7 @@ class ManageCommand(ShowCommand):
             am_slivers, error = self.do_get_reservations(actor_name=am_name, site=site_name,
                                                          slice_id=slice_id, rid=sliver_id,
                                                          callback_topic=callback_topic,
-                                                         type=sliver_type)
+                                                         type=sliver_type, states=states)
 
             if am_slivers is None:
                 print("Status: {}".format(error.get_status()))
