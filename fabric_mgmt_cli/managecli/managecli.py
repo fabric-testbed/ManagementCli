@@ -31,7 +31,7 @@ from fabric_mgmt_cli.managecli.kafka_processor import KafkaProcessorSingleton
 from fabric_mgmt_cli.managecli.manage_command import ManageCommand
 from fabric_mgmt_cli.managecli.show_command import ShowCommand
 from fabric_mgmt_cli.managecli.net import commands as netcommands
-
+import traceback
 
 @click.group()
 @click.option('-v', '--verbose', is_flag=True)
@@ -67,6 +67,25 @@ def close(ctx, sliceid, actor, idtoken, refreshtoken):
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
         mgmt_command.close_slice(slice_id=sliceid, actor_name=actor,
                                  callback_topic=KafkaProcessorSingleton.get().get_callback_topic(), id_token=idtoken)
+        KafkaProcessorSingleton.get().stop()
+    except Exception as e:
+        # traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
+
+
+@slices.command()
+@click.option('--sliceid', help='Slice Id', required=True)
+@click.option('--actor', help='Actor Name', required=True)
+@click.option('--endtime', help='New Lease End Time', required=True)
+@click.pass_context
+def renew(ctx, sliceid, actor, endtime):
+    """ Renews slice for an actor
+    """
+    try:
+        KafkaProcessorSingleton.get().start(ignore_tokens=True)
+        mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
+        mgmt_command.renew_slice(slice_id=sliceid, actor_name=actor, end_time=endtime,
+                                 callback_topic=KafkaProcessorSingleton.get().get_callback_topic())
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
@@ -453,6 +472,7 @@ def site(ctx, actor: str, name: str, mode: str, projects, users, workers: str, d
         # traceback.print_exc()
         click.echo('Error occurred: {}'.format(e))
 
+
 @maintenance.command()
 @click.option('--actor', help='Actor Name', required=True)
 @click.option('--sites', help='Site Names, Comma separated list of the site names or ALL for entire testbed', required=False)
@@ -497,7 +517,7 @@ def audit(ctx, oc: str, broker: str, am: str, sliceid: str, sliverid: str, site:
                               callback_topic=KafkaProcessorSingleton.get().get_callback_topic())
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
-        # traceback.print_exc()
+        traceback.print_exc()
         click.echo('Error occurred: {}'.format(e))
 
 

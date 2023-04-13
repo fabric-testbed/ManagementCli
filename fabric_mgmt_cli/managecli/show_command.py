@@ -187,13 +187,13 @@ class ShowCommand(Command):
                 res_dict['notices'] = reservation.notices
 
             if reservation.start is not None and (field_list is None or 'start' in field_list):
-                res_dict['start'] = ShowCommand.__time_string(milliseconds=reservation.start)
+                res_dict['start'] = ShowCommand.time_string(milliseconds=reservation.start)
 
             if reservation.end is not None and (field_list is None or 'end' in field_list):
-                res_dict['end'] = ShowCommand.__time_string(milliseconds=reservation.end)
+                res_dict['end'] = ShowCommand.time_string(milliseconds=reservation.end)
 
             if reservation.requested_end is not None and (field_list is None or 'requested_end' in field_list):
-                res_dict['requested_end'] = ShowCommand.__time_string(milliseconds=reservation.requested_end)
+                res_dict['requested_end'] = ShowCommand.time_string(milliseconds=reservation.requested_end)
 
             if reservation.units is not None and (field_list is None or 'units' in field_list):
                 res_dict['units'] = reservation.units
@@ -230,9 +230,9 @@ class ShowCommand(Command):
             print(f"Resource Type: {reservation.rtype} Notices: {reservation.notices}")
 
         if reservation.start is not None or reservation.end is not None or reservation.requested_end is not None:
-            print(f"Start: {ShowCommand.__time_string(milliseconds=reservation.start)} "
-                  f"End: {ShowCommand.__time_string(milliseconds=reservation.end)} "
-                  f"Requested End: {ShowCommand.__time_string(milliseconds=reservation.requested_end)}")
+            print(f"Start: {ShowCommand.time_string(milliseconds=reservation.start)} "
+                  f"End: {ShowCommand.time_string(milliseconds=reservation.end)} "
+                  f"Requested End: {ShowCommand.time_string(milliseconds=reservation.requested_end)}")
 
         if reservation.units is not None or reservation.state is not None or reservation.pending_state is not None:
             print(f"Units: {reservation.units} State: {ReservationStates(reservation.state)} "
@@ -261,7 +261,7 @@ class ShowCommand(Command):
                 print(c)
 
     @staticmethod
-    def __time_string(*, milliseconds):
+    def time_string(*, milliseconds):
         time_obj = ActorClock.from_milliseconds(milli_seconds=milliseconds)
         return time_obj.strftime(Constants.LEASE_TIME_FORMAT)
 
