@@ -158,6 +158,26 @@ def query(ctx, actor, sliceid, slicename, idtoken, refreshtoken, email, states, 
         click.echo('Error occurred: {}'.format(e))
 
 
+@slices.command()
+@click.option('--actor', default=None, help='Actor Name', required=True)
+@click.option('--sliceid', default=None, help='Slice ID', required=False)
+@click.option('--slicename', default=None, help='Slice Name', required=False)
+@click.pass_context
+def create(ctx, actor, sliceid, slicename):
+    """ Get slice(s) from an actor
+    """
+    try:
+        idtoken = KafkaProcessorSingleton.get().start(ignore_tokens=True)
+        mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
+        mgmt_command.create_slice(actor_name=actor, callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
+                                  slice_id=sliceid, slice_name=slicename)
+        KafkaProcessorSingleton.get().stop()
+    except Exception as e:
+        # traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
+
+
+
 @click.group()
 @click.pass_context
 def slivers(ctx):

@@ -459,8 +459,26 @@ class ManageCommand(ShowCommand):
         else:
             print(f"Failure to set maintenance mode: [{state}]; Error: [{error}]")
 
-    def delete_dead_slices(self, *, actor_name: str, callback_topic: str, id_token: str, email: str, slice_id: str = None):
+    def create_slice(self, *, actor_name: str, callback_topic: str, slice_id: str, slice_name: str):
+        try:
+            slices, error = self.do_get_slices(actor_name=actor_name, callback_topic=callback_topic, id_token=None,
+                                               email=None, slice_name=slice_name, slice_id=slice_id)
 
+            if slices is not None and len(slices) > 0:
+                raise Exception(f"Slice already exists!")
+            else:
+                actor = self.get_actor(actor_name=actor_name)
+                actor.prepare(callback_topic=callback_topic)
+                slice_obj = SliceAvro()
+                slice_obj.set_slice_name(value=slice_name)
+                slice_obj.set_slice_id(slice_id=slice_id)
+                slice_obj.inventory = True
+                actor.add_slice(slice_obj=slice_obj)
+        except Exception as e:
+            self.logger.error(f"Exception occurred e: {e}")
+            self.logger.error(traceback.format_exc())
+
+    def delete_dead_slices(self, *, actor_name: str, callback_topic: str, id_token: str, email: str, slice_id: str = None):
         try:
             states = [SliceState.Closing.name, SliceState.Dead.name]
             if slice_id is not None:
