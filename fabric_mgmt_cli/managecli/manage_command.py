@@ -34,6 +34,7 @@ from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
 from fabric_cf.actor.core.manage.error import Error
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.util.id import ID
+from fabric_mb.message_bus.messages.auth_avro import AuthAvro
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.site_avro import SiteAvro
@@ -473,6 +474,9 @@ class ManageCommand(ShowCommand):
                 slice_obj.set_slice_name(value=slice_name)
                 slice_obj.set_slice_id(slice_id=slice_id)
                 slice_obj.inventory = True
+                auth = AuthAvro()
+                auth.name = actor_name
+                auth.guid = f"{actor_name}-guid"
                 actor.add_slice(slice_obj=slice_obj)
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
