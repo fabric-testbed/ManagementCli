@@ -115,16 +115,15 @@ def remove(ctx, sliceid, actor, idtoken, refreshtoken):
 @slices.command()
 @click.option('--email', help='User Email', required=True)
 @click.option('--actor', help='Actor Name', required=True)
-@click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
-@click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
+@click.option('--sliceid', help='Slice Id', required=False)
 @click.pass_context
-def removealldead(ctx, email, actor, idtoken, refreshtoken):
+def removealldead(ctx, email, actor, sliceid):
     """ Removes slice for an actor
     """
     try:
-        idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
+        idtoken = KafkaProcessorSingleton.get().start(ignore_tokens=True)
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
-        mgmt_command.delete_dead_slices(email=email, actor_name=actor, id_token=idtoken,
+        mgmt_command.delete_dead_slices(email=email, actor_name=actor, id_token=idtoken, slice_id=sliceid,
                                         callback_topic=KafkaProcessorSingleton.get().get_callback_topic())
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
@@ -158,24 +157,6 @@ def query(ctx, actor, sliceid, slicename, idtoken, refreshtoken, email, states, 
         # traceback.print_exc()
         click.echo('Error occurred: {}'.format(e))
 
-@slices.command()
-@click.option('--email', help='User Email', required=True)
-@click.option('--actor', help='Actor Name', required=True)
-@click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
-@click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
-@click.pass_context
-def removealldead(ctx, email, actor, idtoken, refreshtoken):
-    """ Removes slice for an actor
-    """
-    try:
-        idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
-        mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
-        mgmt_command.delete_dead_slices(email=email, actor_name=actor, id_token=idtoken,
-                                        callback_topic=KafkaProcessorSingleton.get().get_callback_topic())
-        KafkaProcessorSingleton.get().stop()
-    except Exception as e:
-        # traceback.print_exc()
-        click.echo('Error occurred: {}'.format(e))
 
 @click.group()
 @click.pass_context

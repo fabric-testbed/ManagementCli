@@ -459,11 +459,14 @@ class ManageCommand(ShowCommand):
         else:
             print(f"Failure to set maintenance mode: [{state}]; Error: [{error}]")
 
-    def delete_dead_slices(self, *, actor_name: str, callback_topic: str, id_token: str, email: str):
+    def delete_dead_slices(self, *, actor_name: str, callback_topic: str, id_token: str, email: str, slice_id: str = None):
 
         try:
+            states = [SliceState.Closing.name, SliceState.Dead.name]
+            if slice_id is not None:
+                states = None
             slices, error = self.do_get_slices(actor_name=actor_name, callback_topic=callback_topic, id_token=id_token,
-                                               email=email, slice_name=None)
+                                               email=email, slice_name=None, slice_id=slice_id, states=states)
 
             if slices is not None:
                 for s in slices:
