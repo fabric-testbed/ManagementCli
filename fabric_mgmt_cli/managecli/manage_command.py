@@ -474,9 +474,12 @@ class ManageCommand(ShowCommand):
                 slice_obj.set_slice_name(value=slice_name)
                 slice_obj.set_slice_id(slice_id=slice_id)
                 slice_obj.inventory = True
+                slice_obj.broker_client_slice = False
+                slice_obj.description = f"Inventory slice for {actor_name}"
                 auth = AuthAvro()
                 auth.name = actor_name
                 auth.guid = f"{actor_name}-guid"
+                slice_obj.set_owner(value=auth)
                 actor.add_slice(slice_obj=slice_obj)
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
