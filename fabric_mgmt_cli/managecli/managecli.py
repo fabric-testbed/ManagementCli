@@ -157,7 +157,7 @@ def query(ctx, actor, sliceid, slicename, idtoken, refreshtoken, email, states, 
         # traceback.print_exc()
         click.echo('Error occurred: {}'.format(e))
 
-
+'''
 @slices.command()
 @click.option('--actor', default=None, help='Actor Name', required=True)
 @click.option('--sliceid', default=None, help='Slice ID', required=False)
@@ -175,7 +175,7 @@ def create(ctx, actor, sliceid, slicename):
     except Exception as e:
         # traceback.print_exc()
         click.echo('Error occurred: {}'.format(e))
-
+'''
 
 
 @click.group()

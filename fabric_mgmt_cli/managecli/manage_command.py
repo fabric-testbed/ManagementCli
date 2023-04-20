@@ -339,7 +339,7 @@ class ManageCommand(ShowCommand):
                 raise Exception("Invalid arguments am_actor {} or broker_actor {} not found".format(am_actor,
                                                                                                     broker_actor))
 
-            if did is not None:
+            if did is None:
                 delegations, error = self.do_get_delegations(actor_name=am, callback_topic=callback_topic, did=did,
                                                              id_token=id_token)
             else:
