@@ -718,6 +718,102 @@ class ManageCommand(ShowCommand):
         else:
             print(f"No inconsistencies found between {oc_name} {br_name} {am_name}!")
 
+    @staticmethod
+    def extract_guid(*, string):
+        import re
+        uuid_regex = r"[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}"
+        match = re.search(uuid_regex, string)
+        if match:
+            return str(match.group(0))
+        else:
+            return string
+
+    def do_get_net_services(self):
+        from fabric_mgmt_cli.managecli.net.commands import NetCommand
+        net_cmd = NetCommand()
+        net_cmd.get_services(None, None)
+        if net_cmd._res is not None:
+            new = dict()
+            for k, v in net_cmd._res.items():
+                if isinstance(v, dict):
+                    for l, w in v.items():
+                        if not isinstance(w, list):
+                            continue
+                        for d in w:
+                            if isinstance(d, dict) and "name" in d:
+                                guid = self.extract_guid(string=str(d['name']))
+                                new[guid] = d
+                                d['opts'] = l
+                elif isinstance(v, list):
+                    for d in v:
+                        if isinstance(d, dict) and "name" in d:
+                            guid = self.extract_guid(string=str(d['name']))
+                            new[guid] = d
+            return new
+        else:
+            self.logger.error(f"Error occurred while getting services: {net_cmd._code}")
+        return None
+
+    def do_audit_infra(self, *, am_name: str, site_name: str, slice_id: str, sliver_id: str, callback_topic: str,
+                       sliver_type: str):
+        if am_name is None:
+            raise Exception(f"Invalid arguments; must specify at least two actors")
+
+        if site_name is None and "net" not in am_name and "al2s" not in am_name:
+            site_name = am_name.split("-")[0].upper()
+
+        if sliver_type is None:
+            if "net" in am_name:
+                sliver_type = ""
+                for x in ServiceType:
+                    sliver_type += f"{x},"
+                if sliver_type != "":
+                    sliver_type.removesuffix(",")
+            else:
+                sliver_type = f"{NodeType.VM}"
+
+        am_slivers = []
+        net_am_services = {}
+        states = "ticketed, activeticketed, active, failed"
+
+        if am_name is not None:
+            am_slivers, error = self.do_get_reservations(actor_name=am_name, site=site_name,
+                                                         slice_id=slice_id, rid=sliver_id,
+                                                         callback_topic=callback_topic,
+                                                         type=sliver_type, states=states)
+            if am_slivers is None:
+                am_slivers = []
+                if error.get_status().get_code() != 0:
+                    print("Status: {}".format(error.get_status()))
+
+        if "net" in am_name:
+            net_am_services = self.do_get_net_services()
+            if net_am_services is None:
+                net_am_services = {}
+
+        am_slivers_dict = {s.get_reservation_id(): s for s in am_slivers}
+
+        if len(am_slivers_dict) >= len(net_am_services):
+            for sid, sliver in am_slivers_dict.items():
+                msg = f"Sliver: {sliver.get_reservation_id()} Slice: {sliver.get_slice_id()} of "\
+                      f"type: {sliver.get_resource_type()} is inconsistent " \
+                      f"CF State: {ReservationStates(sliver.get_state())}"
+                if sid in net_am_services:
+                    msg += f"/IF State: Provisioned"
+                else:
+                    msg += f"/IF State: Not Provisioned"
+                print(msg)
+        elif len(am_slivers_dict) < len(net_am_services):
+            for name, service in net_am_services.items():
+                msg = f"{name} is inconsistent IF State: Provisioned"
+                if name in am_slivers_dict:
+                    msg += f"/CF State: {ReservationStates(am_slivers_dict[name].get_state())}"
+                else:
+                    msg += f"/CF State: Closed"
+                print(msg)
+        else:
+            print(f"No inconsistencies found between {am_name} and infrastructure!")
+
     def __validate_lease_end_time(self, lease_end_time: str) -> datetime:
         """
         Validate Lease End Time
