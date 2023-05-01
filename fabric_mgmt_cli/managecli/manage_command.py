@@ -773,7 +773,7 @@ class ManageCommand(ShowCommand):
                 sliver_type = f"{NodeType.VM}"
 
         am_slivers = []
-        net_am_services = {}
+        if_slivers = {}
         states = "ticketed, activeticketed, active, failed"
 
         if am_name is not None:
@@ -787,30 +787,42 @@ class ManageCommand(ShowCommand):
                     print("Status: {}".format(error.get_status()))
 
         if "net" in am_name:
-            net_am_services = self.do_get_net_services()
-            if net_am_services is None:
-                net_am_services = {}
+            if_slivers = self.do_get_net_services()
+            if if_slivers is None:
+                if_slivers = {}
 
         am_slivers_dict = {s.get_reservation_id(): s for s in am_slivers}
 
-        if len(am_slivers_dict) >= len(net_am_services):
+        if len(am_slivers_dict) >= len(if_slivers):
             for sid, sliver in am_slivers_dict.items():
+                sliver_state = ReservationStates(sliver.get_state())
                 msg = f"Sliver: {sliver.get_reservation_id()} Slice: {sliver.get_slice_id()} of "\
                       f"type: {sliver.get_resource_type()} is inconsistent " \
-                      f"CF State: {ReservationStates(sliver.get_state())}"
-                if sid in net_am_services:
-                    msg += f"/IF State: Provisioned"
+                      f"CF State: {sliver_state}"
+                if sliver_state == ReservationStates.Active and sid in if_slivers:
+                    continue
                 else:
-                    msg += f"/IF State: Not Provisioned"
-                print(msg)
-        elif len(am_slivers_dict) < len(net_am_services):
-            for name, service in net_am_services.items():
-                msg = f"{name} is inconsistent IF State: Provisioned"
-                if name in am_slivers_dict:
-                    msg += f"/CF State: {ReservationStates(am_slivers_dict[name].get_state())}"
+                    if sid in if_slivers:
+                            msg += f"/IF State: Provisioned"
+                    else:
+                        msg += f"/IF State: Not Provisioned"
+                    print(msg)
+        elif len(am_slivers_dict) < len(if_slivers):
+            for name, if_sliver in if_slivers.items():
+                if if_sliver.get('group'):
+                    if_sliver_type = if_sliver['group']['service'].upper()
                 else:
-                    msg += f"/CF State: Closed"
-                print(msg)
+                    if_sliver_type = ""
+                msg = f"Sliver: {name} Name: {if_sliver['name']} of type: {if_sliver_type} " \
+                      f"is inconsistent IF State: Provisioned"
+                if name in am_slivers_dict and am_slivers_dict[name].get_state() == ReservationStates.Active.value:
+                    continue
+                else:
+                    if name in am_slivers_dict:
+                        msg += f"/CF State: {ReservationStates(am_slivers_dict[name].get_state())}"
+                    else:
+                        msg += f"/CF State: Closed"
+                    print(msg)
         else:
             print(f"No inconsistencies found between {am_name} and infrastructure!")
 
