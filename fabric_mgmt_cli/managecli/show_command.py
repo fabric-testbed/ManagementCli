@@ -370,7 +370,7 @@ class ShowCommand(Command):
             traceback.print_exc()
         return None, actor.get_last_error()
 
-    def get_sites(self, *, actor_name: str, callback_topic: str, sites:str):
+    def get_sites(self, *, actor_name: str, callback_topic: str, sites:str, format: str):
         try:
             sites, error = self.do_get_sites(actor_name=actor_name, callback_topic=callback_topic, sites=sites)
             if sites is not None and len(sites) > 0:
@@ -395,4 +395,5 @@ class ShowCommand(Command):
                     'maint_info': s.get_maint_info().to_json()
                 }
                 site_list.append(s_dict)
-            print(json.dumps(site_list, indent=4))
+            maint_info = {actor_name: site_list}
+            print(json.dumps(maint_info, indent=4))

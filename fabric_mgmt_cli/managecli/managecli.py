@@ -485,8 +485,9 @@ def site(ctx, actors: str, name: str, mode: str, projects, users, workers: str, 
 @maintenance.command()
 @click.option('--actors', help='Comma separated list of Actor names', required=True)
 @click.option('--sites', help='Site Names, Comma separated list of the site names or ALL for entire testbed', required=False)
+@click.option('--format', default='text', help='Output Format Type: text or json', required=False)
 @click.pass_context
-def query(ctx, actors: str, sites: str):
+def query(ctx, actors: str, sites: str, format:str):
     """ Query Maintenance Status for Testbed/Site
     """
     try:
@@ -498,7 +499,7 @@ def query(ctx, actors: str, sites: str):
             actor = actor.strip()
             mgmt_command.get_sites(actor_name=actor,
                                    callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                                   sites=sites)
+                                   sites=sites, format=format)
 
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
