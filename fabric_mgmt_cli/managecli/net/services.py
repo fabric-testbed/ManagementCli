@@ -234,6 +234,10 @@ class l3rt(NSOService):
         }
         return ret
 
+class l3vpn(NSOService):
+    service_str = "l3vpn"
+    service_id = "l3vpn:l3vpn"
+
 class portmirror(NSOService):
     service_str = "port-mirror"
     service_id = "port-mirror:port-mirror"
