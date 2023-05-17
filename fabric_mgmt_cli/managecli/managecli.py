@@ -483,18 +483,22 @@ def site(ctx, actors: str, name: str, mode: str, projects, users, workers: str, 
 
 
 @maintenance.command()
-@click.option('--actor', help='Actor Name', required=True)
+@click.option('--actors', help='Comma separated list of Actor names', required=True)
 @click.option('--sites', help='Site Names, Comma separated list of the site names or ALL for entire testbed', required=False)
 @click.pass_context
-def query(ctx, actor: str, sites: str):
+def query(ctx, actors: str, sites: str):
     """ Query Maintenance Status for Testbed/Site
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(ignore_tokens=True)
         mgmt_command = ShowCommand(logger=KafkaProcessorSingleton.get().logger)
-        mgmt_command.get_sites(actor_name=actor,
-                               callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                               sites=sites)
+        actors = actors.strip()
+        actor_list = actors.split(",")
+        for actor in actor_list:
+            actor = actor.strip()
+            mgmt_command.get_sites(actor_name=actor,
+                                   callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
+                                   sites=sites)
 
         KafkaProcessorSingleton.get().stop()
     except Exception as e:

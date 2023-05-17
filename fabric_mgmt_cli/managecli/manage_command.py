@@ -458,7 +458,7 @@ class ManageCommand(ShowCommand):
             error = str(e)
 
         if status:
-            print(f"Maintenance mode successfully set to {state}")
+            print(f"Maintenance mode successfully set to {state} on {actor_name}")
         else:
             print(f"Failure to set maintenance mode: [{state}]; Error: [{error}]")
 

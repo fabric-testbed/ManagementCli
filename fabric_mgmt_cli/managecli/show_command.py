@@ -374,16 +374,17 @@ class ShowCommand(Command):
         try:
             sites, error = self.do_get_sites(actor_name=actor_name, callback_topic=callback_topic, sites=sites)
             if sites is not None and len(sites) > 0:
-                self.__print_sites(sites=sites, format=format)
+                self.__print_sites(sites=sites, format=format, actor_name=actor_name)
             else:
-                print("Status: {}".format(error.get_status()))
+                print(f"Status of {actor_name}: {error.get_status()}")
         except Exception as e:
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)
             print("Exception occurred while processing get_delegations {}".format(e))
 
-    def __print_sites(self, *, sites: List[SiteAvro], format: str):
+    def __print_sites(self, *, sites: List[SiteAvro], format: str, actor_name:str):
         if format == 'text':
+            print(f"Actor: {actor_name}")
             for s in sites:
                 print(s)
         else:
