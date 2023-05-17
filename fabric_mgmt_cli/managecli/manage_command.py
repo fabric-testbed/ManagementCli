@@ -343,10 +343,12 @@ class ManageCommand(ShowCommand):
                 delegations, error = self.do_get_delegations(actor_name=am, callback_topic=callback_topic, did=did,
                                                              id_token=id_token)
             else:
-                d = DelegationAvro()
-                d.delegation_id = did
-                d.state = DelegationState.Delegated.value
-                delegations = [d]
+                dd = DelegationAvro()
+                dd.slice = SliceAvro()
+                dd.slice.slice_name = broker
+                dd.delegation_id = did
+                dd.state = DelegationState.Delegated.value
+                delegations = [dd]
 
             if delegations is None:
                 print("Error occurred while getting delegations for actor: {}".format(am))
@@ -809,8 +811,8 @@ class ManageCommand(ShowCommand):
                     print(msg)
         elif len(am_slivers_dict) < len(if_slivers):
             for name, if_sliver in if_slivers.items():
-                if if_sliver.get('group'):
-                    if_sliver_type = if_sliver['group']['service'].upper()
+                if if_sliver.get('opts'):
+                    if_sliver_type = if_sliver['opts'].split(":")[0].upper()
                 else:
                     if_sliver_type = ""
                 msg = f"Sliver: {name} Name: {if_sliver['name']} of type: {if_sliver_type} " \

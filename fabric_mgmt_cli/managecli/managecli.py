@@ -403,7 +403,7 @@ def maintenance(ctx):
 
 
 @maintenance.command()
-@click.option('--actor', help='Actor Name', required=True)
+@click.option('--actors', help='Comma separated list of Actor names', required=True)
 @click.option('--mode', help='Mode value, i.e. PreMaint, Maint, Active', required=True)
 @click.option('--projects', help='Comma separated list of Project Ids allowed to use TestBed in Maintenance mode',
               required=False, default=None)
@@ -419,17 +419,21 @@ def maintenance(ctx):
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def testbed(ctx, actor: str, mode: str, projects: str, users: str, deadline: str, end: str, idtoken: str,
+def testbed(ctx, actors: str, mode: str, projects: str, users: str, deadline: str, end: str, idtoken: str,
             refreshtoken: str):
     """ Change Maintenance modes (PreMaint, Maint, Active) for the Testbed
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
-        mgmt_command.toggle_maintenance_mode(actor_name=actor,
-                                             callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                                             state=mode, projects=projects, users=users, id_token=idtoken,
-                                             deadline=deadline, expected_end=end)
+        actors = actors.strip()
+        actor_list = actors.split(",")
+        for actor in actor_list:
+            actor = actor.strip()
+            mgmt_command.toggle_maintenance_mode(actor_name=actor,
+                                                 callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
+                                                 state=mode, projects=projects, users=users, id_token=idtoken,
+                                                 deadline=deadline, expected_end=end)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
@@ -437,7 +441,7 @@ def testbed(ctx, actor: str, mode: str, projects: str, users: str, deadline: str
 
 
 @maintenance.command()
-@click.option('--actor', help='Actor Name', required=True)
+@click.option('--actors', help='Comma separated list of Actor names', required=True)
 @click.option('--name', help='Site Name', required=True)
 @click.option('--mode', help='Mode value, i.e. PreMaint, Maint, Active', required=True)
 @click.option('--projects', help='Comma separated list of Project Ids allowed to use TestBed in Maintenance mode',
@@ -456,17 +460,21 @@ def testbed(ctx, actor: str, mode: str, projects: str, users: str, deadline: str
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def site(ctx, actor: str, name: str, mode: str, projects, users, workers: str, deadline: str, end: str,
+def site(ctx, actors: str, name: str, mode: str, projects, users, workers: str, deadline: str, end: str,
          idtoken: str, refreshtoken: str):
     """ Change Maintenance modes (PreMaint, Maint, Active) for a specific Site or a specific worker
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
-        mgmt_command.toggle_maintenance_mode(actor_name=actor,
-                                             callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                                             state=mode, projects=projects, users=users, expected_end=end,
-                                             site_name=name, workers=workers, deadline=deadline, id_token=idtoken)
+        actors = actors.strip()
+        actor_list = actors.split(",")
+        for actor in actor_list:
+            actor = actor.strip()
+            mgmt_command.toggle_maintenance_mode(actor_name=actor,
+                                                 callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
+                                                 state=mode, projects=projects, users=users, expected_end=end,
+                                                 site_name=name, workers=workers, deadline=deadline, id_token=idtoken)
 
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
