@@ -798,16 +798,16 @@ class ManageCommand(ShowCommand):
         if len(am_slivers_dict) >= len(if_slivers):
             for sid, sliver in am_slivers_dict.items():
                 sliver_state = ReservationStates(sliver.get_state())
-                msg = f"Sliver: {sliver.get_reservation_id()} Slice: {sliver.get_slice_id()} of "\
-                      f"type: {sliver.get_resource_type()} is inconsistent " \
-                      f"CF State: {sliver_state}"
+                msg = f"--service {str(sliver.get_resource_type()).lower()}  --name " \
+                      f"{sliver.get_name()}-{sliver.get_reservation_id()} of Slice: {sliver.get_slice_id()} "\
+                      f" is inconsistent (cf_state/if_state): ({sliver_state}/"
                 if sliver_state == ReservationStates.Active and sid in if_slivers:
                     continue
                 else:
                     if sid in if_slivers:
-                            msg += f"/IF State: Provisioned"
+                            msg += f"Provisioned)"
                     else:
-                        msg += f"/IF State: Not Provisioned"
+                        msg += f"Not Provisioned)"
                     print(msg)
         elif len(am_slivers_dict) < len(if_slivers):
             for name, if_sliver in if_slivers.items():
@@ -815,15 +815,15 @@ class ManageCommand(ShowCommand):
                     if_sliver_type = if_sliver['opts'].split(":")[0].upper()
                 else:
                     if_sliver_type = ""
-                msg = f"Sliver: {name} Name: {if_sliver['name']} of type: {if_sliver_type} " \
-                      f"is inconsistent IF State: Provisioned"
+                msg = f"--service {if_sliver_type.lower()} --name {if_sliver['name']} " \
+                      f"is inconsistent (if_state/cf_state): (Provisioned/"
                 if name in am_slivers_dict and am_slivers_dict[name].get_state() == ReservationStates.Active.value:
                     continue
                 else:
                     if name in am_slivers_dict:
-                        msg += f"/CF State: {ReservationStates(am_slivers_dict[name].get_state())}"
+                        msg += f"{ReservationStates(am_slivers_dict[name].get_state())})"
                     else:
-                        msg += f"/CF State: Closed"
+                        msg += f"Closed)"
                     print(msg)
         else:
             print(f"No inconsistencies found between {am_name} and infrastructure!")
