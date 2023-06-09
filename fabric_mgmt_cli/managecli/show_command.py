@@ -323,6 +323,8 @@ class ShowCommand(Command):
         print("Delegation ID: {} Slice ID: {}".format(dlg_object.delegation_id, dlg_object.slice.get_slice_id()))
         if dlg_object.delegation_name is not None:
             print("Delegation Name: {}".format(dlg_object.delegation_name))
+        if dlg_object.site is not None:
+            print("Site Name: {}".format(dlg_object.site))
         if dlg_object.sequence is not None:
             print("Sequence: {}".format(dlg_object.sequence))
         if dlg_object.state is not None:
@@ -363,7 +365,7 @@ class ShowCommand(Command):
             raise Exception("Invalid arguments actor {} not found".format(actor_name))
         try:
             actor.prepare(callback_topic=callback_topic)
-            return actor.get_sites(site=sites), actor.get_last_error()
+            return actor.get_sites(site=sites.upper()), actor.get_last_error()
         except Exception as e:
             self.logger.error(f"Exception occurred while fetching delegations: e {e}")
             self.logger.error(traceback.format_exc())

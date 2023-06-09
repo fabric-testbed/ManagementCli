@@ -433,7 +433,7 @@ class ManageCommand(ShowCommand):
                 if site_name is None:
                     site_name = Constants.ALL
 
-                worker_list = [site_name]
+                worker_list = [site_name.upper()]
                 if workers is not None:
                     worker_list = workers.split(",")
 
@@ -441,7 +441,7 @@ class ManageCommand(ShowCommand):
                 for w in worker_list:
                     entry = MaintenanceEntry(state=state, deadline=deadline, expected_end=expected_end)
                     maint_info.add(w, entry)
-                site_avro = SiteAvro(name=site_name, maint_info=maint_info)
+                site_avro = SiteAvro(name=site_name.upper(), maint_info=maint_info)
                 sites = [site_avro]
 
                 status = actor.toggle_maintenance_mode(actor_guid=str(actor.get_guid()), sites=sites, projects=projects,
