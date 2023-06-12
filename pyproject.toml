@@ -19,8 +19,8 @@ requires-python = '>=3.9'
 dependencies = [
     "click==7.1.2",
     "pytest==7.1.1",
-    "fabric-cf==1.5.0b4",
-    "fabric-credmgr-client==1.5.0rc1"
+    "fabric-cf==1.5.0",
+    "fabric-credmgr-client==1.5.0"
     ]
 
 scripts = { "fabric-mgmt-cli" = "fabric_mgmt_cli.managecli.managecli:managecli"}
