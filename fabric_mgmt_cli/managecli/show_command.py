@@ -36,6 +36,7 @@ from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.utils import sliver_to_str
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
+from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.site_avro import SiteAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
@@ -105,6 +106,7 @@ class ShowCommand(Command):
                 for x in states_list:
                     if slice_states is None:
                         slice_states = []
+                    x = x.strip()
                     slice_states.append(SliceState.translate(state_name=x).value)
 
             result = actor.get_slices(slice_id=sid, slice_name=slice_name, email=email, states=slice_states)
@@ -129,8 +131,9 @@ class ShowCommand(Command):
             if states is not None:
                 states_list = states.split(",")
                 for x in states_list:
-                    if reservation_states is not None:
+                    if reservation_states is None:
                         reservation_states = []
+                    x = x.strip()
                     reservation_states.append(ReservationStates.translate(state_name=x).value)
             return actor.get_reservations(slice_id=sid, rid=reservation_id, states=reservation_states, email=email,
                                           site=site, type=type), actor.get_last_error()
@@ -155,6 +158,7 @@ class ShowCommand(Command):
                 for x in states:
                     if delegation_states is None:
                         delegation_states = []
+                    x = x.strip()
                     delegation_states.append(DelegationState.translate(state_name=x).value)
             return actor.get_delegations(delegation_id=did, slice_id=sid,
                                          states=delegation_states), actor.get_last_error()
@@ -183,13 +187,13 @@ class ShowCommand(Command):
                 res_dict['notices'] = reservation.notices
 
             if reservation.start is not None and (field_list is None or 'start' in field_list):
-                res_dict['start'] = ShowCommand.__time_string(milliseconds=reservation.start)
+                res_dict['start'] = ShowCommand.time_string(milliseconds=reservation.start)
 
             if reservation.end is not None and (field_list is None or 'end' in field_list):
-                res_dict['end'] = ShowCommand.__time_string(milliseconds=reservation.end)
+                res_dict['end'] = ShowCommand.time_string(milliseconds=reservation.end)
 
             if reservation.requested_end is not None and (field_list is None or 'requested_end' in field_list):
-                res_dict['requested_end'] = ShowCommand.__time_string(milliseconds=reservation.requested_end)
+                res_dict['requested_end'] = ShowCommand.time_string(milliseconds=reservation.requested_end)
 
             if reservation.units is not None and (field_list is None or 'units' in field_list):
                 res_dict['units'] = reservation.units
@@ -226,13 +230,18 @@ class ShowCommand(Command):
             print(f"Resource Type: {reservation.rtype} Notices: {reservation.notices}")
 
         if reservation.start is not None or reservation.end is not None or reservation.requested_end is not None:
-            print(f"Start: {ShowCommand.__time_string(milliseconds=reservation.start)} "
-                  f"End: {ShowCommand.__time_string(milliseconds=reservation.end)} "
-                  f"Requested End: {ShowCommand.__time_string(milliseconds=reservation.requested_end)}")
+            print(f"Start: {ShowCommand.time_string(milliseconds=reservation.start)} "
+                  f"End: {ShowCommand.time_string(milliseconds=reservation.end)} "
+                  f"Requested End: {ShowCommand.time_string(milliseconds=reservation.requested_end)}")
 
         if reservation.units is not None or reservation.state is not None or reservation.pending_state is not None:
             print(f"Units: {reservation.units} State: {ReservationStates(reservation.state)} "
                   f"Pending State: {ReservationPendingStates(reservation.pending_state)}")
+
+        if isinstance(reservation, LeaseReservationAvro) and reservation.redeem_processors is not None:
+            print(f"Predecessors")
+            for x in reservation.redeem_processors:
+                print(x.get_reservation_id())
 
         sliver = reservation.get_sliver()
         if sliver is not None:
@@ -252,7 +261,7 @@ class ShowCommand(Command):
                 print(c)
 
     @staticmethod
-    def __time_string(*, milliseconds):
+    def time_string(*, milliseconds):
         time_obj = ActorClock.from_milliseconds(milli_seconds=milliseconds)
         return time_obj.strftime(Constants.LEASE_TIME_FORMAT)
 
@@ -314,6 +323,8 @@ class ShowCommand(Command):
         print("Delegation ID: {} Slice ID: {}".format(dlg_object.delegation_id, dlg_object.slice.get_slice_id()))
         if dlg_object.delegation_name is not None:
             print("Delegation Name: {}".format(dlg_object.delegation_name))
+        if dlg_object.site is not None:
+            print("Site Name: {}".format(dlg_object.site))
         if dlg_object.sequence is not None:
             print("Sequence: {}".format(dlg_object.sequence))
         if dlg_object.state is not None:
@@ -354,27 +365,28 @@ class ShowCommand(Command):
             raise Exception("Invalid arguments actor {} not found".format(actor_name))
         try:
             actor.prepare(callback_topic=callback_topic)
-            return actor.get_sites(site=sites), actor.get_last_error()
+            return actor.get_sites(site=sites.upper()), actor.get_last_error()
         except Exception as e:
             self.logger.error(f"Exception occurred while fetching delegations: e {e}")
             self.logger.error(traceback.format_exc())
             traceback.print_exc()
         return None, actor.get_last_error()
 
-    def get_sites(self, *, actor_name: str, callback_topic: str, sites:str):
+    def get_sites(self, *, actor_name: str, callback_topic: str, sites:str, format: str):
         try:
             sites, error = self.do_get_sites(actor_name=actor_name, callback_topic=callback_topic, sites=sites)
             if sites is not None and len(sites) > 0:
-                self.__print_sites(sites=sites, format=format)
+                self.__print_sites(sites=sites, format=format, actor_name=actor_name)
             else:
-                print("Status: {}".format(error.get_status()))
+                print(f"Status of {actor_name}: {error.get_status()}")
         except Exception as e:
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)
             print("Exception occurred while processing get_delegations {}".format(e))
 
-    def __print_sites(self, *, sites: List[SiteAvro], format: str):
+    def __print_sites(self, *, sites: List[SiteAvro], format: str, actor_name:str):
         if format == 'text':
+            print(f"Actor: {actor_name}")
             for s in sites:
                 print(s)
         else:
@@ -385,4 +397,5 @@ class ShowCommand(Command):
                     'maint_info': s.get_maint_info().to_json()
                 }
                 site_list.append(s_dict)
-            print(json.dumps(site_list, indent=4))
+            maint_info = {actor_name: site_list}
+            print(json.dumps(maint_info, indent=4))

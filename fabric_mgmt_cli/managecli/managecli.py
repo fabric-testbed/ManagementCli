@@ -31,7 +31,7 @@ from fabric_mgmt_cli.managecli.kafka_processor import KafkaProcessorSingleton
 from fabric_mgmt_cli.managecli.manage_command import ManageCommand
 from fabric_mgmt_cli.managecli.show_command import ShowCommand
 from fabric_mgmt_cli.managecli.net import commands as netcommands
-
+import traceback
 
 @click.group()
 @click.option('-v', '--verbose', is_flag=True)
@@ -76,6 +76,25 @@ def close(ctx, sliceid, actor, idtoken, refreshtoken):
 @slices.command()
 @click.option('--sliceid', help='Slice Id', required=True)
 @click.option('--actor', help='Actor Name', required=True)
+@click.option('--endtime', help='New Lease End Time', required=True)
+@click.pass_context
+def renew(ctx, sliceid, actor, endtime):
+    """ Renews slice for an actor
+    """
+    try:
+        KafkaProcessorSingleton.get().start(ignore_tokens=True)
+        mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
+        mgmt_command.renew_slice(slice_id=sliceid, actor_name=actor, end_time=endtime,
+                                 callback_topic=KafkaProcessorSingleton.get().get_callback_topic())
+        KafkaProcessorSingleton.get().stop()
+    except Exception as e:
+        # traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
+
+
+@slices.command()
+@click.option('--sliceid', help='Slice Id', required=True)
+@click.option('--actor', help='Actor Name', required=True)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
@@ -96,16 +115,15 @@ def remove(ctx, sliceid, actor, idtoken, refreshtoken):
 @slices.command()
 @click.option('--email', help='User Email', required=True)
 @click.option('--actor', help='Actor Name', required=True)
-@click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
-@click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
+@click.option('--sliceid', help='Slice Id', required=False)
 @click.pass_context
-def removealldead(ctx, email, actor, idtoken, refreshtoken):
+def removealldead(ctx, email, actor, sliceid):
     """ Removes slice for an actor
     """
     try:
-        idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
+        idtoken = KafkaProcessorSingleton.get().start(ignore_tokens=True)
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
-        mgmt_command.delete_dead_slices(email=email, actor_name=actor, id_token=idtoken,
+        mgmt_command.delete_dead_slices(email=email, actor_name=actor, id_token=idtoken, slice_id=sliceid,
                                         callback_topic=KafkaProcessorSingleton.get().get_callback_topic())
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
@@ -139,24 +157,26 @@ def query(ctx, actor, sliceid, slicename, idtoken, refreshtoken, email, states, 
         # traceback.print_exc()
         click.echo('Error occurred: {}'.format(e))
 
+'''
 @slices.command()
-@click.option('--email', help='User Email', required=True)
-@click.option('--actor', help='Actor Name', required=True)
-@click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
-@click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
+@click.option('--actor', default=None, help='Actor Name', required=True)
+@click.option('--sliceid', default=None, help='Slice ID', required=False)
+@click.option('--slicename', default=None, help='Slice Name', required=False)
 @click.pass_context
-def removealldead(ctx, email, actor, idtoken, refreshtoken):
-    """ Removes slice for an actor
+def create(ctx, actor, sliceid, slicename):
+    """ Get slice(s) from an actor
     """
     try:
-        idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
+        idtoken = KafkaProcessorSingleton.get().start(ignore_tokens=True)
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
-        mgmt_command.delete_dead_slices(email=email, actor_name=actor, id_token=idtoken,
-                                        callback_topic=KafkaProcessorSingleton.get().get_callback_topic())
+        mgmt_command.create_slice(actor_name=actor, callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
+                                  slice_id=sliceid, slice_name=slicename)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
         click.echo('Error occurred: {}'.format(e))
+'''
+
 
 @click.group()
 @click.pass_context
@@ -383,7 +403,7 @@ def maintenance(ctx):
 
 
 @maintenance.command()
-@click.option('--actor', help='Actor Name', required=True)
+@click.option('--actors', help='Comma separated list of Actor names', required=True)
 @click.option('--mode', help='Mode value, i.e. PreMaint, Maint, Active', required=True)
 @click.option('--projects', help='Comma separated list of Project Ids allowed to use TestBed in Maintenance mode',
               required=False, default=None)
@@ -399,17 +419,21 @@ def maintenance(ctx):
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def testbed(ctx, actor: str, mode: str, projects: str, users: str, deadline: str, end: str, idtoken: str,
+def testbed(ctx, actors: str, mode: str, projects: str, users: str, deadline: str, end: str, idtoken: str,
             refreshtoken: str):
     """ Change Maintenance modes (PreMaint, Maint, Active) for the Testbed
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
-        mgmt_command.toggle_maintenance_mode(actor_name=actor,
-                                             callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                                             state=mode, projects=projects, users=users, id_token=idtoken,
-                                             deadline=deadline, expected_end=end)
+        actors = actors.strip()
+        actor_list = actors.split(",")
+        for actor in actor_list:
+            actor = actor.strip()
+            mgmt_command.toggle_maintenance_mode(actor_name=actor,
+                                                 callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
+                                                 state=mode, projects=projects, users=users, id_token=idtoken,
+                                                 deadline=deadline, expected_end=end)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
@@ -417,7 +441,7 @@ def testbed(ctx, actor: str, mode: str, projects: str, users: str, deadline: str
 
 
 @maintenance.command()
-@click.option('--actor', help='Actor Name', required=True)
+@click.option('--actors', help='Comma separated list of Actor names', required=True)
 @click.option('--name', help='Site Name', required=True)
 @click.option('--mode', help='Mode value, i.e. PreMaint, Maint, Active', required=True)
 @click.option('--projects', help='Comma separated list of Project Ids allowed to use TestBed in Maintenance mode',
@@ -436,40 +460,104 @@ def testbed(ctx, actor: str, mode: str, projects: str, users: str, deadline: str
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def site(ctx, actor: str, name: str, mode: str, projects, users, workers: str, deadline: str, end: str,
+def site(ctx, actors: str, name: str, mode: str, projects, users, workers: str, deadline: str, end: str,
          idtoken: str, refreshtoken: str):
     """ Change Maintenance modes (PreMaint, Maint, Active) for a specific Site or a specific worker
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
-        mgmt_command.toggle_maintenance_mode(actor_name=actor,
-                                             callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                                             state=mode, projects=projects, users=users, expected_end=end,
-                                             site_name=name, workers=workers, deadline=deadline, id_token=idtoken)
+        actors = actors.strip()
+        actor_list = actors.split(",")
+        for actor in actor_list:
+            actor = actor.strip()
+            mgmt_command.toggle_maintenance_mode(actor_name=actor,
+                                                 callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
+                                                 state=mode, projects=projects, users=users, expected_end=end,
+                                                 site_name=name, workers=workers, deadline=deadline, id_token=idtoken)
 
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
         click.echo('Error occurred: {}'.format(e))
 
+
 @maintenance.command()
-@click.option('--actor', help='Actor Name', required=True)
+@click.option('--actors', help='Comma separated list of Actor names', required=True)
 @click.option('--sites', help='Site Names, Comma separated list of the site names or ALL for entire testbed', required=False)
+@click.option('--format', default='text', help='Output Format Type: text or json', required=False)
 @click.pass_context
-def query(ctx, actor: str, sites: str):
+def query(ctx, actors: str, sites: str, format:str):
     """ Query Maintenance Status for Testbed/Site
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(ignore_tokens=True)
         mgmt_command = ShowCommand(logger=KafkaProcessorSingleton.get().logger)
-        mgmt_command.get_sites(actor_name=actor,
-                               callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
-                               sites=sites)
+        actors = actors.strip()
+        actor_list = actors.split(",")
+        for actor in actor_list:
+            actor = actor.strip()
+            mgmt_command.get_sites(actor_name=actor,
+                                   callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
+                                   sites=sites, format=format)
 
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
+
+
+@maintenance.command()
+@click.option('--oc', help='Orchestrator Name', required=True)
+@click.option('--broker', help='Broker Name', required=True)
+@click.option('--am', help='Am Name', required=True)
+@click.option('--sliceid', help='Slice Id', required=False)
+@click.option('--sliverid', help='Sliver Id', required=False)
+@click.option('--site', help='Site Name', required=False)
+@click.option('--type', default=None,
+              help='Sliver Type, possible allowed values: '
+                   '[VM, L2Bridge, L2STS, L2PTP, FABNetv4, FABNetv6, FABNetv4Ext, '
+                   'FABNetv6Ext, PortMirror, Facility, L3VPN]',
+              required=False)
+@click.pass_context
+def audit(ctx, oc: str, broker: str, am: str, sliceid: str, sliverid: str, site: str, type: str):
+    """ Audit Sliver state across various Control Framework actors, report discrepancies found.
+    """
+    try:
+        KafkaProcessorSingleton.get().start(ignore_tokens=True)
+        mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
+        mgmt_command.do_audit(oc_name=oc, br_name=broker, am_name=am, slice_id=sliceid,
+                              sliver_id=sliverid, site_name=site, sliver_type=type,
+                              callback_topic=KafkaProcessorSingleton.get().get_callback_topic())
+        KafkaProcessorSingleton.get().stop()
+    except Exception as e:
+        traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
+
+
+@maintenance.command()
+@click.option('--am', help='Am Name', required=True)
+@click.option('--sliceid', help='Slice Id', required=False)
+@click.option('--sliverid', help='Sliver Id', required=False)
+@click.option('--site', help='Site Name', required=False)
+@click.option('--type', default=None,
+              help='Sliver Type, possible allowed values: '
+                   '[VM, L2Bridge, L2STS, L2PTP, FABNetv4, FABNetv6, FABNetv4Ext, '
+                   'FABNetv6Ext, PortMirror, Facility, L3VPN]',
+              required=False)
+@click.pass_context
+def audit_infra(ctx, am: str, sliceid: str, sliverid: str, site: str, type: str):
+    """ Audit AM Sliver state against the underlying infrastructure, report discrepancies found.
+    """
+    try:
+        KafkaProcessorSingleton.get().start(ignore_tokens=True)
+        mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
+        mgmt_command.do_audit_infra(am_name=am, slice_id=sliceid,
+                                    sliver_id=sliverid, site_name=site, sliver_type=type,
+                                    callback_topic=KafkaProcessorSingleton.get().get_callback_topic())
+        KafkaProcessorSingleton.get().stop()
+    except Exception as e:
+        traceback.print_exc()
         click.echo('Error occurred: {}'.format(e))
 
 

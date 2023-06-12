@@ -1,5 +1,0 @@
-click==7.1.2
-pytest==7.1.1
-setuptools
-fabric-cf==1.4.0
-fabric-credmgr-client==1.3.2
