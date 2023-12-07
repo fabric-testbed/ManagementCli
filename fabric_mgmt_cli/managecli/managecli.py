@@ -76,15 +76,22 @@ def close(ctx, sliceid, actor, idtoken, refreshtoken):
 @slices.command()
 @click.option('--sliceid', help='Slice Id', required=True)
 @click.option('--actor', help='Actor Name', required=True)
-@click.option('--endtime', help='New Lease End Time', required=True)
+@click.option('--endtime', help='Number of Days to renew', required=True)
 @click.pass_context
 def renew(ctx, sliceid, actor, endtime):
     """ Renews slice for an actor
     """
     try:
+        from datetime import datetime
+        from datetime import timezone
+        from datetime import timedelta
+
+        # Set end host to now plus 1 day
+        end_date = (datetime.now(timezone.utc) + timedelta(days=int(endtime))).strftime("%Y-%m-%d %H:%M:%S %z")
+
         KafkaProcessorSingleton.get().start(ignore_tokens=True)
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
-        mgmt_command.renew_slice(slice_id=sliceid, actor_name=actor, end_time=endtime,
+        mgmt_command.renew_slice(slice_id=sliceid, actor_name=actor, end_time=end_date,
                                  callback_topic=KafkaProcessorSingleton.get().get_callback_topic())
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
