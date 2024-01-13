@@ -260,6 +260,8 @@ class ShowCommand(Command):
                 inventory_path = playbook_config.get("inventory_location")
 
                 print()
+                print("Ansible commands to attach the PCI devices:")
+                print()
                 if sliver.attached_components_info is not None:
                     for component in sliver.attached_components_info.devices.values():
                         if component.get_type() == ComponentType.Storage:
@@ -291,6 +293,7 @@ class ShowCommand(Command):
                             for key, value in host_vars.items():
                                 cmd += f"{key}={value}"
                             cmd += "'"
+                            print()
                             print(cmd)
                             continue
 
@@ -325,8 +328,8 @@ class ShowCommand(Command):
                             for key, value in host_vars.items():
                                 cmd += f"{key}={value}"
                             cmd += "'"
+                            print()
                             print(cmd)
-                            print(f"Ansible command: {cmd}")
         print("")
 
     @staticmethod
