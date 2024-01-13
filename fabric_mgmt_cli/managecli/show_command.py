@@ -277,6 +277,8 @@ class ShowCommand(Command):
                               f"device={reservation.reservation_id} operation=attach " \
                               f"kvmguest_name={sliver.label_allocations.instance} "
 
+                        host_vars = {}
+
                         if component.get_type() == ComponentType.FPGA:
                             bdf = str(pci_device_list[0])
                             pattern = r'(\d+):(\d+):(\d+)\.(\d)'
@@ -288,7 +290,7 @@ class ShowCommand(Command):
                                 "slot": f"0x{matches[3]}"
                             }
 
-                            for key, value in host_vars:
+                            for key, value in host_vars.items():
                                 cmd += f"{key}={value}"
                             cmd += "'"
                             print(cmd)
@@ -322,7 +324,7 @@ class ShowCommand(Command):
                             if mac is not None:
                                 host_vars["mac"] = mac
 
-                            for key, value in host_vars:
+                            for key, value in host_vars.items():
                                 cmd += f"{key}={value}"
                             cmd += "'"
                             print(cmd)
