@@ -65,62 +65,46 @@ class ConfigProcessor:
     def get_kafka_server(self) -> str:
         if self.config is not None and self.config.get_runtime_config() is not None:
             return self.config.get_runtime_config().get_kafka_server()
-        else:
-            return None
 
     def get_kafka_schema_registry(self) -> str:
         if self.config is not None and self.config.get_runtime_config() is not None:
             return self.config.get_runtime_config().get_kafka_schema_registry()
-        else:
-            return None
 
     def get_kafka_key_schema(self) -> str:
         if self.config is not None and self.config.get_runtime_config() is not None:
             return self.config.get_runtime_config().get_kafka_key_schema()
-        else:
-            return None
 
     def get_kafka_value_schema(self) -> str:
         if self.config is not None and self.config.get_runtime_config() is not None:
             return self.config.get_runtime_config().get_kafka_value_schema()
-        else:
-            return None
 
     def get_kafka_topic(self) -> str:
         if self.config is not None and self.config.get_runtime_config() is not None:
             return self.config.get_runtime_config().get_kafka_topic()
-        else:
-            return None
 
     def get_security_protocol(self) -> str:
         if self.config is not None and self.config.get_runtime_config() is not None:
             return self.config.get_runtime_config().get_security_protocol()
-        return None
 
     def get_group_id(self) -> str:
         if self.config is not None and self.config.get_runtime_config() is not None:
             return self.config.get_runtime_config().get_group_id()
-        return None
 
     def get_ca_location(self) -> str:
         if self.config is not None and self.config.get_runtime_config() is not None:
             return self.config.get_runtime_config().get_ca_location()
-        return None
 
     def get_cert_location(self) -> str:
         if self.config is not None and self.config.get_runtime_config() is not None:
             return self.config.get_runtime_config().get_cert_location()
-        return None
 
     def get_key_location(self) -> str:
         if self.config is not None and self.config.get_runtime_config() is not None:
             return self.config.get_runtime_config().get_key_location()
-        return None
 
     def get_key_password(self) -> str:
         if self.config is not None and self.config.get_runtime_config() is not None:
             return self.config.get_runtime_config().get_key_password()
-        return None
 
     def get_peers(self) -> list:
         return self.config.get_peers()
@@ -128,12 +112,10 @@ class ConfigProcessor:
     def get_log_dir(self) -> str:
         if self.config is not None and self.config.get_logging() is not None:
             return self.config.get_logging().get_log_dir()
-        return None
 
     def get_log_file(self) -> str:
         if self.config is not None and self.config.get_logging() is not None:
             return self.config.get_logging().get_log_file()
-        return None
 
     def get_log_level(self):
         if self.config is not None and self.config.get_logging() is not None:
@@ -143,22 +125,18 @@ class ConfigProcessor:
     def get_log_retain(self) -> int:
         if self.config is not None and self.config.get_logging() is not None:
             return int(self.config.get_logging().get_log_retain())
-        return None
 
     def get_log_size(self) -> int:
         if self.config is not None and self.config.get_logging() is not None:
             return int(self.config.get_logging().get_log_size())
-        return None
 
     def get_log_name(self) -> str:
         if self.config is not None and self.config.get_logging() is not None:
             return self.config.get_logging().get_log_name()
-        return None
 
     def get_kafka_config(self) -> dict:
         if self.config is not None and self.config.get_runtime_config() is not None:
             return self.config.get_runtime_config().get_kafka_config()
-        return None
 
     def get_kafka_config_producer(self) -> dict:
         if self.config is None or self.config.get_runtime_config() is None:
@@ -222,22 +200,18 @@ class ConfigProcessor:
     def get_net_url(self) -> str:
         if self.config is not None and self.config.get_net() is not None:
             return self.config.get_net().get_url()
-        return None
 
     def get_net_username(self) -> str:
         if self.config is not None and self.config.get_net() is not None:
             return self.config.get_net().get_username()
-        return None
 
     def get_net_password(self) -> str:
         if self.config is not None and self.config.get_net() is not None:
             return self.config.get_net().get_password()
-        return None
 
     def get_net_validate_certs(self) -> str:
         if self.config is not None and self.config.get_net() is not None:
             return self.config.get_net().get_validate_certs()
-        return None
 
     def get_playbook_config(self) -> dict:
         if self.config is not None:
