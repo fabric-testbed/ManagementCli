@@ -40,6 +40,16 @@ auth:
   - guid: managecli-guid
   - credmgr-host: https://dev-2.fabric_mgmt_cli-testbed.net/
 
+playbooks:
+  location: /etc/fabric/actor/playbooks
+  inventory_location: /etc/fabric/actor/playbooks/inventory
+  admin_ssh_key: /root/.ssh/id_rsa_nova
+  GPU: worker_pci_provisioning.yml
+  SmartNIC: worker_pci_provisioning.yml
+  SharedNIC: worker_pci_provisioning.yml
+  FPGA: fpga_provisioning.yml
+  NVME: worker_pci_provisioning.yml
+
 peers:
   - peer:
     - name: orchestrator

@@ -244,6 +244,10 @@ class KafkaProcessor:
             self.logger.debug(f"Failed to stop Management Shell: {e}")
             self.logger.error(traceback.format_exc())
 
+    def get_playbook_config(self):
+        if self.config_processor is not None:
+            self.config_processor.get_playbook_config()
+
 
 class KafkaProcessorSingleton:
     """

@@ -19,7 +19,8 @@ requires-python = '>=3.9'
 dependencies = [
     "click==7.1.2",
     "pytest==7.1.1",
-    "fabric-cf==1.5.0",
+    "fabric-cf==1.6.0",
+    "ansible",
     "fabric-credmgr-client==1.5.0"
     ]
 

@@ -256,7 +256,10 @@ def remove(ctx, sliverid, actor, idtoken, refreshtoken):
 @click.option('--format', default='text', help='Output Format Type: text or json', required=False)
 @click.option('--fields', default=None, help='Comma separated list of fields to be displayed', required=False)
 @click.pass_context
-def query(ctx, actor, sliceid, sliverid, states, idtoken, refreshtoken, email, site, type, format, fields):
+@click.option('--include_ansible', default=None, help='Print ansible commands to attach components', required=False)
+@click.pass_context
+def query(ctx, actor, sliceid, sliverid, states, idtoken, refreshtoken, email, site, type, format, fields,
+          include_ansible):
     """ Get sliver(s) from an actor
     """
     try:
@@ -265,7 +268,8 @@ def query(ctx, actor, sliceid, sliverid, states, idtoken, refreshtoken, email, s
         mgmt_command.get_reservations(actor_name=actor,
                                       callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
                                       slice_id=sliceid, rid=sliverid, states=states, id_token=idtoken, email=email,
-                                      site=site, type=type, format=format, fields=fields)
+                                      site=site, type=type, format=format, fields=fields,
+                                      include_ansible=include_ansible)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()

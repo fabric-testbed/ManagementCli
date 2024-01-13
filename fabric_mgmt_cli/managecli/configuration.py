@@ -202,11 +202,17 @@ class NetConfig:
 
 
 class Configuration:
+    PLAYBOOK_SECTION = "playbooks"
+    PB_LOCATION = "location"
+    PB_POST_BOOT = "post_boot"
+    PB_INVENTORY = "inventory_location"
+
     def __init__(self, config: dict):
         self.runtime = RuntimeConfig(config=config[Constants.CONFIG_SECTION_RUNTIME])
         self.logging = LogConfig(config=config[Constants.CONFIG_LOGGING_SECTION])
         self.auth = AuthConfig(config=config['auth'])
         self.net = NetConfig(config=config['net'])
+        self.playbook_config = config.get(Configuration.PLAYBOOK_SECTION)
         self.peers = []
         if 'peers' in config:
             for e in config['peers']:
@@ -226,3 +232,6 @@ class Configuration:
 
     def get_net(self) -> NetConfig:
         return self.net
+
+    def get_playbook_config(self) -> dict:
+        return self.playbook_config

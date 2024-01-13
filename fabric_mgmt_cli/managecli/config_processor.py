@@ -238,3 +238,7 @@ class ConfigProcessor:
         if self.config is not None and self.config.get_net() is not None:
             return self.config.get_net().get_validate_certs()
         return None
+
+    def get_playbook_config(self) -> dict:
+        if self.config is not None:
+            return self.get_playbook_config()
