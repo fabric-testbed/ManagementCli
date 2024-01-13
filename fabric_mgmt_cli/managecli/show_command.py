@@ -253,7 +253,7 @@ class ShowCommand(Command):
         if sliver is not None:
             print(f"Sliver: {sliver_to_str(sliver=sliver)}")
 
-            if include_ansible:
+            if include_ansible and isinstance(sliver, NodeSliver):
                 from fabric_mgmt_cli.managecli.kafka_processor import KafkaProcessorSingleton
                 playbook_config = KafkaProcessorSingleton.get().get_playbook_config()
                 location = playbook_config.get("location")
