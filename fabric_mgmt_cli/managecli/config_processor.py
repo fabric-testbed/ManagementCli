@@ -241,4 +241,4 @@ class ConfigProcessor:
 
     def get_playbook_config(self) -> dict:
         if self.config is not None:
-            return self.get_playbook_config()
+            return self.config.get_playbook_config()

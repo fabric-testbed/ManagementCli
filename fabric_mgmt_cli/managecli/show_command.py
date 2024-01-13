@@ -277,8 +277,6 @@ class ShowCommand(Command):
                               f"device={reservation.reservation_id} operation=attach " \
                               f"kvmguest_name={sliver.label_allocations.instance} "
 
-                        host_vars = {}
-
                         if component.get_type() == ComponentType.FPGA:
                             bdf = str(pci_device_list[0])
                             pattern = r'(\d+):(\d+):(\d+)\.(\d)'
