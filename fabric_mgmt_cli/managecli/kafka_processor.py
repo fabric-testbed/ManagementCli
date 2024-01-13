@@ -246,7 +246,7 @@ class KafkaProcessor:
 
     def get_playbook_config(self):
         if self.config_processor is not None:
-            self.config_processor.get_playbook_config()
+            return self.config_processor.get_playbook_config()
 
 
 class KafkaProcessorSingleton:
