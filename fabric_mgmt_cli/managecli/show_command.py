@@ -314,10 +314,10 @@ class ShowCommand(Command):
 
                             host_vars = {
                                 "domain": device_char_arr[0],
-                                "bus": device_char_arr[1]",
-                                "slot": device_char_arr[2]",
+                                "bus": device_char_arr[1],
+                                "slot": device_char_arr[2],
                                 "function": device_char_arr[3],
-                                "bdf" = device
+                                "bdf" : device
                             }
                             if mac is not None:
                                 host_vars["mac"] = mac
