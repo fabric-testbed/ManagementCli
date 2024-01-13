@@ -255,7 +255,6 @@ def remove(ctx, sliverid, actor, idtoken, refreshtoken):
               required=False)
 @click.option('--format', default='text', help='Output Format Type: text or json', required=False)
 @click.option('--fields', default=None, help='Comma separated list of fields to be displayed', required=False)
-@click.pass_context
 @click.option('--include_ansible', default=None, help='Print ansible commands to attach components', required=False)
 @click.pass_context
 def query(ctx, actor, sliceid, sliverid, states, idtoken, refreshtoken, email, site, type, format, fields,
