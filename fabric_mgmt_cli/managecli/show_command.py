@@ -291,7 +291,7 @@ class ShowCommand(Command):
                             }
 
                             for key, value in host_vars.items():
-                                cmd += f"{key}={value}"
+                                cmd += f"{key}={value} "
                             cmd += "'"
                             print()
                             print(cmd)
@@ -326,7 +326,7 @@ class ShowCommand(Command):
                                 host_vars["mac"] = mac
 
                             for key, value in host_vars.items():
-                                cmd += f"{key}={value}"
+                                cmd += f"{key}={value} "
                             cmd += "'"
                             print()
                             print(cmd)
