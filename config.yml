@@ -38,7 +38,17 @@ logging:
 auth:
   - name: managecli
   - guid: managecli-guid
-  - credmgr-host: https://dev-2.fabric_mgmt_cli-testbed.net/
+  - credmgr-host: https://cm.fabric_mgmt_cli-testbed.net/
+
+playbooks:
+  location: /home/nrig-service/AMHandlers/fabric_am/playbooks
+  inventory_location: /home/nrig-service/AMHandlers/fabric_am/playbooks/inventory
+  admin_ssh_key: /root/.ssh/id_rsa_nova
+  GPU: worker_pci_provisioning.yml
+  SmartNIC: worker_pci_provisioning.yml
+  SharedNIC: worker_pci_provisioning.yml
+  FPGA: fpga_provisioning.yml
+  NVME: worker_pci_provisioning.yml
 
 peers:
   - peer:

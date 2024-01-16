@@ -76,15 +76,22 @@ def close(ctx, sliceid, actor, idtoken, refreshtoken):
 @slices.command()
 @click.option('--sliceid', help='Slice Id', required=True)
 @click.option('--actor', help='Actor Name', required=True)
-@click.option('--endtime', help='New Lease End Time', required=True)
+@click.option('--endtime', help='Number of Days to renew', required=True)
 @click.pass_context
 def renew(ctx, sliceid, actor, endtime):
     """ Renews slice for an actor
     """
     try:
+        from datetime import datetime
+        from datetime import timezone
+        from datetime import timedelta
+
+        # Set end host to now plus 1 day
+        end_date = (datetime.now(timezone.utc) + timedelta(days=int(endtime))).strftime("%Y-%m-%d %H:%M:%S %z")
+
         KafkaProcessorSingleton.get().start(ignore_tokens=True)
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
-        mgmt_command.renew_slice(slice_id=sliceid, actor_name=actor, end_time=endtime,
+        mgmt_command.renew_slice(slice_id=sliceid, actor_name=actor, end_time=end_date,
                                  callback_topic=KafkaProcessorSingleton.get().get_callback_topic())
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
@@ -248,8 +255,10 @@ def remove(ctx, sliverid, actor, idtoken, refreshtoken):
               required=False)
 @click.option('--format', default='text', help='Output Format Type: text or json', required=False)
 @click.option('--fields', default=None, help='Comma separated list of fields to be displayed', required=False)
+@click.option('--include_ansible', default=None, help='Print ansible commands to attach components', required=False)
 @click.pass_context
-def query(ctx, actor, sliceid, sliverid, states, idtoken, refreshtoken, email, site, type, format, fields):
+def query(ctx, actor, sliceid, sliverid, states, idtoken, refreshtoken, email, site, type, format, fields,
+          include_ansible):
     """ Get sliver(s) from an actor
     """
     try:
@@ -258,7 +267,8 @@ def query(ctx, actor, sliceid, sliverid, states, idtoken, refreshtoken, email, s
         mgmt_command.get_reservations(actor_name=actor,
                                       callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
                                       slice_id=sliceid, rid=sliverid, states=states, id_token=idtoken, email=email,
-                                      site=site, type=type, format=format, fields=fields)
+                                      site=site, type=type, format=format, fields=fields,
+                                      include_ansible=include_ansible)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()

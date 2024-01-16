@@ -102,6 +102,11 @@ class KafkaProcessor:
                                              auth=self.config_processor.get_auth(),
                                              logger=self.logger, message_processor=self.message_processor,
                                              producer=self.producer)
+                elif p.get_type().lower() in [ActorType.Broker.name.lower(), ActorType.Orchestrator.name.lower()]:
+                    mgmt_actor = KafkaBroker(guid=ID(uid=p.get_guid()), kafka_topic=p.get_kafka_topic(),
+                                             auth=self.config_processor.get_auth(),
+                                             logger=self.logger, message_processor=self.message_processor,
+                                             producer=self.producer)
                 else:
                     mgmt_actor = KafkaActor(guid=ID(uid=p.get_guid()), kafka_topic=p.get_kafka_topic(),
                                             auth=self.config_processor.get_auth(),
@@ -238,6 +243,10 @@ class KafkaProcessor:
         except Exception as e:
             self.logger.debug(f"Failed to stop Management Shell: {e}")
             self.logger.error(traceback.format_exc())
+
+    def get_playbook_config(self):
+        if self.config_processor is not None:
+            return self.config_processor.get_playbook_config()
 
 
 class KafkaProcessorSingleton:

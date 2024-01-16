@@ -29,7 +29,7 @@ from typing import Tuple, Dict
 
 from fabric_cf.actor.core.apis.abc_delegation import DelegationState
 from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
+from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
 from fabric_cf.actor.core.manage.error import Error
 from fabric_cf.actor.core.time.actor_clock import ActorClock
@@ -360,6 +360,7 @@ class ManageCommand(ShowCommand):
                 return
 
             claimed = False
+            reclaimed = []
             for d in delegations:
                 if d.get_state() == DelegationState.Failed.value or d.get_state() == DelegationState.Closed.value:
                     continue
@@ -369,11 +370,18 @@ class ManageCommand(ShowCommand):
                                                                     did=d.get_delegation_id(),
                                                                     callback_topic=callback_topic,
                                                                     id_token=id_token)
+                    reclaimed.append(d.get_delegation_id())
                     claimed = True
                     if delegation is not None:
                         print("Delegation reclaimed: {} ".format(delegation.get_delegation_id()))
                     else:
                         self.print_result(status=error.get_status())
+            for r in reclaimed:
+                print("Closing Delegation# {}".format(r))
+                self.close_delegation(actor_name=broker, did=r, callback_topic=callback_topic, id_token=id_token)
+                print("Removing Delegation# {}".format(r))
+                self.remove_delegation(actor_name=broker, did=r, callback_topic=callback_topic, id_token=id_token)
+
             if not claimed:
                 print(f"No delegations found for Broker# {broker}")
         except Exception as e:
@@ -794,22 +802,37 @@ class ManageCommand(ShowCommand):
                 if_slivers = {}
 
         am_slivers_dict = {s.get_reservation_id(): s for s in am_slivers}
+        print(f"# of slivers reported by Infrastructure: {len(if_slivers)}")
+        print(f"# of slivers reported by AM: {len(am_slivers_dict)}")
 
-        if len(am_slivers_dict) >= len(if_slivers):
+        cf_only_slivers = set(am_slivers_dict.keys()) - set(if_slivers.keys())
+        if len(am_slivers_dict) == len(if_slivers):
             for sid, sliver in am_slivers_dict.items():
                 sliver_state = ReservationStates(sliver.get_state())
+                sliver_pending_state = ReservationPendingStates(sliver.get_pending_state())
+                if isinstance(sliver, ReservationMng):
+                    if sliver.get_sliver() is not None:
+                        sliver_name = sliver.get_sliver().get_name()
+                else:
+                    sliver_name = sliver.get_name()
+
                 msg = f"--service {str(sliver.get_resource_type()).lower()}  --name " \
-                      f"{sliver.get_name()}-{sliver.get_reservation_id()} of Slice: {sliver.get_slice_id()} "\
-                      f" is inconsistent (cf_state/if_state): ({sliver_state}/"
-                if sliver_state == ReservationStates.Active and sid in if_slivers:
+                      f"{sliver_name}-{sliver.get_reservation_id()} of Slice: {sliver.get_slice_id()} "\
+                      f" is inconsistent (cf_state/if_state): ({sliver_state}-{sliver_pending_state}/"
+                if sliver_state == ReservationStates.Active and \
+                        sliver_pending_state != ReservationPendingStates.Closing and \
+                        sid in if_slivers:
                     continue
                 else:
                     if sid in if_slivers:
                             msg += f"Provisioned)"
                     else:
+                        if sliver_pending_state == ReservationPendingStates.Closing:
+                            continue
                         msg += f"Not Provisioned)"
                     print(msg)
-        elif len(am_slivers_dict) < len(if_slivers):
+            return
+        else:
             for name, if_sliver in if_slivers.items():
                 if if_sliver.get('opts'):
                     if_sliver_type = if_sliver['opts'].split(":")[0].upper()
@@ -825,8 +848,23 @@ class ManageCommand(ShowCommand):
                     else:
                         msg += f"Closed)"
                     print(msg)
-        else:
-            print(f"No inconsistencies found between {am_name} and infrastructure!")
+        for sid in cf_only_slivers:
+            sliver = am_slivers_dict.get(sid)
+            sliver_state = ReservationStates(sliver.get_state())
+            sliver_pending_state = ReservationPendingStates(sliver.get_pending_state())
+            if sliver_pending_state == ReservationPendingStates.Closing:
+                continue
+            print(f"Sliver state inconsistencies between CF DB and NSO - These are not leaks and no action is needed!")
+            if isinstance(sliver, ReservationMng):
+                if sliver.get_sliver() is not None:
+                    sliver_name = sliver.get_sliver().get_name()
+            else:
+                sliver_name = sliver.get_name()
+
+            msg = f"--service {str(sliver.get_resource_type()).lower()}  --name " \
+                  f"{sliver_name}-{sliver.get_reservation_id()} of Slice: {sliver.get_slice_id()} " \
+                  f" is inconsistent (cf_state/if_state): ({sliver_state}/Not Provisioned)"
+            print(msg)
 
     def __validate_lease_end_time(self, lease_end_time: str) -> datetime:
         """
