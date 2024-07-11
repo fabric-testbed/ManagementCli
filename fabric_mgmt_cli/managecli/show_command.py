@@ -307,6 +307,7 @@ class ShowCommand(Command):
 
                         idx = 0
                         for device in pci_device_list:
+                            device_info = ""
                             device_char_arr = ShowCommand.__extract_device_addr_octets(device_address=device)
                             device = device.replace("0000:", "")
 
@@ -326,10 +327,10 @@ class ShowCommand(Command):
                                 host_vars["mac"] = mac
 
                             for key, value in host_vars.items():
-                                cmd += f"{key}={value} "
-                            cmd += "'"
+                                device_info += f"{key}={value} "
+                            #cmd += "'"
                             print()
-                            print(cmd)
+                            print(f"{cmd} {device_info}'")
         print("")
 
     @staticmethod

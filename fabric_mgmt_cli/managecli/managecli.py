@@ -222,15 +222,19 @@ def close(ctx, sliverid, actor, idtoken, refreshtoken):
 @click.option('--actor', help='Actor Name', required=True)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
+@click.option('--states', default=None, help='Sliver State, Comma separated list of states, possible values: '
+                                             '[nascent, ticketed, active, activeticketed, closed, closewait, '
+                                             'failed, unknown, all]', required=False)
 @click.pass_context
-def remove(ctx, sliverid, actor, idtoken, refreshtoken):
+def remove(ctx, sliverid, actor, idtoken, refreshtoken, states):
     """ Removes sliver for an actor
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
         mgmt_command.remove_reservation(rid=sliverid, actor_name=actor,
-                                        callback_topic=KafkaProcessorSingleton.get().get_callback_topic(), id_token=idtoken)
+                                        callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
+                                        id_token=idtoken, states=states)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
