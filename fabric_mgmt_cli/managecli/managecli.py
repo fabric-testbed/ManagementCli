@@ -54,18 +54,19 @@ def slices(ctx):
 
 
 @slices.command()
-@click.option('--sliceid', help='Slice Id', required=True)
 @click.option('--actor', help='Actor Name', required=True)
+@click.option('--sliceid', help='Slice Id', required=False, default=None)
+@click.option('--projectid', help='Project Id', required=False, default=None)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def close(ctx, sliceid, actor, idtoken, refreshtoken):
+def close(ctx, actor, sliceid, idtoken, refreshtoken, projectid):
     """ Closes slice for an actor
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
-        mgmt_command.close_slice(slice_id=sliceid, actor_name=actor,
+        mgmt_command.close_slice(slice_id=sliceid, actor_name=actor, projectid=projectid,
                                  callback_topic=KafkaProcessorSingleton.get().get_callback_topic(), id_token=idtoken)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
@@ -218,8 +219,8 @@ def close(ctx, sliverid, actor, idtoken, refreshtoken):
 
 
 @slivers.command()
-@click.option('--sliverid', help='Sliver Id', required=True)
 @click.option('--actor', help='Actor Name', required=True)
+@click.option('--sliverid', help='Sliver Id', required=False, default=None)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.option('--states', default=None, help='Sliver State, Comma separated list of states, possible values: '
@@ -390,7 +391,7 @@ def close(ctx, did, actor, idtoken, refreshtoken):
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
 def remove(ctx, did, actor, idtoken, refreshtoken):
-    """ Removes sliver for an actor
+    """ Removes delegations for an actor
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)

@@ -112,23 +112,47 @@ class ManageCommand(ShowCommand):
 
         return False, actor.get_last_error()
 
-    def close_slice(self, *, slice_id: str, actor_name: str, callback_topic: str, id_token: str):
-        """
-        Close slice
-        @param slice_id slice id
-        @param actor_name actor name
-        @param callback_topic callback topic
-        @param id_token identity token
-        """
+    def _close_single_slice(self, actor_name: str, callback_topic: str, id_token: str, slice_id: str):
         try:
-            sid = None
-            if slice_id is not None:
-                sid = ID(uid=slice_id)
+            sid = ID(uid=slice_id)
             result, error = self.do_close_slice(slice_id=sid, actor_name=actor_name,
                                                 callback_topic=callback_topic, id_token=id_token)
             print(result)
             if result is False:
                 self.print_result(status=error.get_status())
+        except Exception as e:
+            self.logger.error(f"Exception occurred e: {e}")
+            self.logger.error(traceback.format_exc())
+
+    def close_slice(self, *, actor_name: str, callback_topic: str, id_token: str, slice_id: str = None,
+                    projectid: str = None):
+        """
+        Close slice
+        @param slice_id slice id
+        @param actor_name actor name
+        @param projectid project id
+        @param callback_topic callback topic
+        @param id_token identity token
+        """
+        try:
+            if not slice_id and not projectid:
+                raise Exception("Must specify either sliceid or projectid")
+
+            if slice_id is not None:
+                self._close_single_slice(actor_name=actor_name, callback_topic=callback_topic, id_token=id_token,
+                                         slice_id=slice_id)
+
+            slices, error = self.do_get_slices(actor_name=actor_name, callback_topic=callback_topic, id_token=None,
+                                               email=None, projectid=projectid)
+
+            if slices is None:
+                print(f"No slices to close. Error: {error}")
+            else:
+                for s in slices:
+                    print(f"Attempting to close slice: {s.get_slice_id()}")
+                    self._close_single_slice(actor_name=actor_name, callback_topic=callback_topic, id_token=id_token,
+                                             slice_id=s.get_slice_id())
+
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())

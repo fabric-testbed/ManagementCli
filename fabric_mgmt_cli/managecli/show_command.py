@@ -96,7 +96,7 @@ class ShowCommand(Command):
             print("Exception occurred while processing get_delegations {}".format(e))
 
     def do_get_slices(self, *, actor_name: str, callback_topic: str, slice_id: str = None, slice_name: str = None,
-                      id_token: str = None, email: str = None, states: str = None) -> Tuple[
+                      id_token: str = None, email: str = None, states: str = None, projectid: str = None) -> Tuple[
         List[SliceAvro] or None, Error]:
         actor = self.get_actor(actor_name=actor_name)
 
@@ -114,7 +114,8 @@ class ShowCommand(Command):
                     x = x.strip()
                     slice_states.append(SliceState.translate(state_name=x).value)
 
-            result = actor.get_slices(slice_id=sid, slice_name=slice_name, email=email, states=slice_states)
+            result = actor.get_slices(slice_id=sid, slice_name=slice_name, email=email, states=slice_states,
+                                      project=projectid)
             return result, actor.get_last_error()
         except Exception:
             ex_str = traceback.format_exc()
