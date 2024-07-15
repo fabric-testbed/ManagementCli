@@ -66,11 +66,11 @@ class ShowCommand(Command):
 
     def get_reservations(self, *, actor_name: str, callback_topic: str, slice_id: str, rid: str,
                          states: str, id_token: str, email: str, site: str, type: str, format: str, fields: str,
-                         include_ansible: bool):
+                         include_ansible: bool, host: str, ip_subnet: str):
         try:
             reservations, error = self.do_get_reservations(actor_name=actor_name, callback_topic=callback_topic,
                                                            slice_id=slice_id, rid=rid, states=states, id_token=id_token,
-                                                           email=email, site=site, type=type)
+                                                           email=email, site=site, type=type, host=host, ip_subnet=ip_subnet)
             if reservations is not None and len(reservations) > 0:
                 self.__print_reservations(reservations=reservations, format=format, fields=fields,
                                           include_ansible=include_ansible)
@@ -124,7 +124,7 @@ class ShowCommand(Command):
 
     def do_get_reservations(self, *, actor_name: str, callback_topic: str, slice_id: str = None, rid: str = None,
                             states: str = None, id_token: str = None, email: str = None, site: str = None,
-                            type: str = None) -> Tuple[List[ReservationMng] or None, Error]:
+                            type: str = None, host: str, ip_subnet: str) -> Tuple[List[ReservationMng] or None, Error]:
         actor = self.get_actor(actor_name=actor_name)
 
         if actor is None:
@@ -142,7 +142,7 @@ class ShowCommand(Command):
                     x = x.strip()
                     reservation_states.append(ReservationStates.translate(state_name=x).value)
             return actor.get_reservations(slice_id=sid, rid=reservation_id, states=reservation_states, email=email,
-                                          site=site, type=type), actor.get_last_error()
+                                          site=site, type=type, host=host, ip_subnet=ip_subnet), actor.get_last_error()
         except Exception as e:
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)

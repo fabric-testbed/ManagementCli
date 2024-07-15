@@ -253,6 +253,8 @@ def remove(ctx, sliverid, actor, idtoken, refreshtoken, states):
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.option('--email', default=None, help='User Email', required=False)
 @click.option('--site', default=None, help='Site Name', required=False)
+@click.option('--host', default=None, help='Host Name', required=False)
+@click.option('--ip_subnet', default=None, help='IP Subnet', required=False)
 @click.option('--type', default=None,
               help='Sliver Type, possible allowed values: '
                    '[VM, L2Bridge, L2STS, L2PTP, FABNetv4, FABNetv6, FABNetv4Ext, FABNetv6Ext, PortMirror, Facility, '
@@ -262,8 +264,8 @@ def remove(ctx, sliverid, actor, idtoken, refreshtoken, states):
 @click.option('--fields', default=None, help='Comma separated list of fields to be displayed', required=False)
 @click.option('--include_ansible', default=None, help='Print ansible commands to attach components', required=False)
 @click.pass_context
-def query(ctx, actor, sliceid, sliverid, states, idtoken, refreshtoken, email, site, type, format, fields,
-          include_ansible):
+def query(ctx, actor, sliceid, sliverid, states, idtoken, refreshtoken, email, site, host, ip_subnet,
+          type, format, fields, include_ansible):
     """ Get sliver(s) from an actor
     """
     try:
@@ -273,7 +275,7 @@ def query(ctx, actor, sliceid, sliverid, states, idtoken, refreshtoken, email, s
                                       callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
                                       slice_id=sliceid, rid=sliverid, states=states, id_token=idtoken, email=email,
                                       site=site, type=type, format=format, fields=fields,
-                                      include_ansible=include_ansible)
+                                      include_ansible=include_ansible, host=host, ip_subnet=ip_subnet)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
