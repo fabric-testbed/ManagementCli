@@ -141,6 +141,7 @@ class ManageCommand(ShowCommand):
             if slice_id is not None:
                 self._close_single_slice(actor_name=actor_name, callback_topic=callback_topic, id_token=id_token,
                                          slice_id=slice_id)
+                return
 
             slices, error = self.do_get_slices(actor_name=actor_name, callback_topic=callback_topic, id_token=None,
                                                email=None, projectid=projectid)

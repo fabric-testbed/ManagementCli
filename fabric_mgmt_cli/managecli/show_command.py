@@ -124,7 +124,7 @@ class ShowCommand(Command):
 
     def do_get_reservations(self, *, actor_name: str, callback_topic: str, slice_id: str = None, rid: str = None,
                             states: str = None, id_token: str = None, email: str = None, site: str = None,
-                            type: str = None, host: str, ip_subnet: str) -> Tuple[List[ReservationMng] or None, Error]:
+                            type: str = None, host: str = None, ip_subnet: str = None) -> Tuple[List[ReservationMng] or None, Error]:
         actor = self.get_actor(actor_name=actor_name)
 
         if actor is None:
