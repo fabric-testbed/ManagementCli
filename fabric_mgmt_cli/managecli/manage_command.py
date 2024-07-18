@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import traceback
 from datetime import datetime, timezone, timedelta
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List, Optional
 
 from fabric_cf.actor.core.apis.abc_delegation import DelegationState
 from fabric_cf.actor.core.common.constants import Constants
@@ -112,23 +112,48 @@ class ManageCommand(ShowCommand):
 
         return False, actor.get_last_error()
 
-    def close_slice(self, *, slice_id: str, actor_name: str, callback_topic: str, id_token: str):
-        """
-        Close slice
-        @param slice_id slice id
-        @param actor_name actor name
-        @param callback_topic callback topic
-        @param id_token identity token
-        """
+    def _close_single_slice(self, actor_name: str, callback_topic: str, id_token: str, slice_id: str):
         try:
-            sid = None
-            if slice_id is not None:
-                sid = ID(uid=slice_id)
+            sid = ID(uid=slice_id)
             result, error = self.do_close_slice(slice_id=sid, actor_name=actor_name,
                                                 callback_topic=callback_topic, id_token=id_token)
             print(result)
             if result is False:
                 self.print_result(status=error.get_status())
+        except Exception as e:
+            self.logger.error(f"Exception occurred e: {e}")
+            self.logger.error(traceback.format_exc())
+
+    def close_slice(self, *, actor_name: str, callback_topic: str, id_token: str, slice_id: str = None,
+                    projectid: str = None):
+        """
+        Close slice
+        @param slice_id slice id
+        @param actor_name actor name
+        @param projectid project id
+        @param callback_topic callback topic
+        @param id_token identity token
+        """
+        try:
+            if not slice_id and not projectid:
+                raise Exception("Must specify either sliceid or projectid")
+
+            if slice_id is not None:
+                self._close_single_slice(actor_name=actor_name, callback_topic=callback_topic, id_token=id_token,
+                                         slice_id=slice_id)
+                return
+
+            slices, error = self.do_get_slices(actor_name=actor_name, callback_topic=callback_topic, id_token=None,
+                                               email=None, projectid=projectid)
+
+            if slices is None:
+                print(f"No slices to close. Error: {error}")
+            else:
+                for s in slices:
+                    print(f"Attempting to close slice: {s.get_slice_id()}")
+                    self._close_single_slice(actor_name=actor_name, callback_topic=callback_topic, id_token=id_token,
+                                             slice_id=s.get_slice_id())
+
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())
@@ -156,23 +181,44 @@ class ManageCommand(ShowCommand):
             self.logger.error(traceback.format_exc())
         return False, actor.get_last_error()
 
-    def remove_reservation(self, *, rid: str, actor_name: str, callback_topic: str, id_token: str):
+    def remove_reservation(self, *, rid: Optional[str] = None, actor_name: str, callback_topic: str,
+                           id_token: str, states: Optional[str] = None) -> None:
         """
         Remove reservation
-        @param rid reservation id
-        @param actor_name actor name
-        @param callback_topic callback topic
-        @param id_token identity token
+
+        :param rid: Reservation ID
+        :param actor_name: Actor name
+        :param callback_topic: Callback topic
+        :param id_token: Identity token
+        :param states: Comma-separated list of states
         """
         try:
-            result, error = self.do_remove_reservation(rid=rid, actor_name=actor_name, callback_topic=callback_topic,
-                                                       id_token=id_token)
-            print(result)
-            if result is False:
-                self.print_result(status=error.get_status())
+            if rid:
+                self._remove_single_reservation(rid, actor_name, callback_topic, id_token)
+            elif states:
+                self._remove_reservations_by_states(actor_name, callback_topic, id_token, states)
         except Exception as e:
-            self.logger.error(f"Exception occurred e: {e}")
+            self.logger.error(f"Exception occurred: {e}")
             self.logger.error(traceback.format_exc())
+
+    def _remove_single_reservation(self, rid: str, actor_name: str, callback_topic: str, id_token: str) -> None:
+        result, error = self.do_remove_reservation(rid=rid, actor_name=actor_name,
+                                                   callback_topic=callback_topic, id_token=id_token)
+        print(result)
+        if not result:
+            self.print_result(status=error.get_status())
+
+    def _remove_reservations_by_states(self, actor_name: str, callback_topic: str, id_token: str, states: str) -> None:
+        reservations, error = self.do_get_reservations(actor_name=actor_name, callback_topic=callback_topic,
+                                                       id_token=id_token, states=states)
+        if reservations is None:
+            print(f"No reservations to remove. Error: {error}")
+        else:
+            for reservation in reservations:
+                print(f"Attempting to remove reservation: {reservation.get_reservation_id()}")
+                self._remove_single_reservation(rid=reservation.get_reservation_id(),
+                                                actor_name=actor_name, callback_topic=callback_topic,
+                                                id_token=id_token)
 
     def do_remove_slice(self, *, slice_id: str, actor_name: str, callback_topic: str,
                         id_token: str) -> Tuple[bool, Error]:

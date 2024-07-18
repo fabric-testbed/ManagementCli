@@ -54,18 +54,19 @@ def slices(ctx):
 
 
 @slices.command()
-@click.option('--sliceid', help='Slice Id', required=True)
 @click.option('--actor', help='Actor Name', required=True)
+@click.option('--sliceid', help='Slice Id', required=False, default=None)
+@click.option('--projectid', help='Project Id', required=False, default=None)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
-def close(ctx, sliceid, actor, idtoken, refreshtoken):
+def close(ctx, actor, sliceid, idtoken, refreshtoken, projectid):
     """ Closes slice for an actor
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
-        mgmt_command.close_slice(slice_id=sliceid, actor_name=actor,
+        mgmt_command.close_slice(slice_id=sliceid, actor_name=actor, projectid=projectid,
                                  callback_topic=KafkaProcessorSingleton.get().get_callback_topic(), id_token=idtoken)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
@@ -218,19 +219,23 @@ def close(ctx, sliverid, actor, idtoken, refreshtoken):
 
 
 @slivers.command()
-@click.option('--sliverid', help='Sliver Id', required=True)
 @click.option('--actor', help='Actor Name', required=True)
+@click.option('--sliverid', help='Sliver Id', required=False, default=None)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
+@click.option('--states', default=None, help='Sliver State, Comma separated list of states, possible values: '
+                                             '[nascent, ticketed, active, activeticketed, closed, closewait, '
+                                             'failed, unknown, all]', required=False)
 @click.pass_context
-def remove(ctx, sliverid, actor, idtoken, refreshtoken):
+def remove(ctx, sliverid, actor, idtoken, refreshtoken, states):
     """ Removes sliver for an actor
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
         mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
         mgmt_command.remove_reservation(rid=sliverid, actor_name=actor,
-                                        callback_topic=KafkaProcessorSingleton.get().get_callback_topic(), id_token=idtoken)
+                                        callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
+                                        id_token=idtoken, states=states)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
@@ -248,6 +253,8 @@ def remove(ctx, sliverid, actor, idtoken, refreshtoken):
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.option('--email', default=None, help='User Email', required=False)
 @click.option('--site', default=None, help='Site Name', required=False)
+@click.option('--host', default=None, help='Host Name', required=False)
+@click.option('--ip_subnet', default=None, help='IP Subnet', required=False)
 @click.option('--type', default=None,
               help='Sliver Type, possible allowed values: '
                    '[VM, L2Bridge, L2STS, L2PTP, FABNetv4, FABNetv6, FABNetv4Ext, FABNetv6Ext, PortMirror, Facility, '
@@ -257,8 +264,8 @@ def remove(ctx, sliverid, actor, idtoken, refreshtoken):
 @click.option('--fields', default=None, help='Comma separated list of fields to be displayed', required=False)
 @click.option('--include_ansible', default=None, help='Print ansible commands to attach components', required=False)
 @click.pass_context
-def query(ctx, actor, sliceid, sliverid, states, idtoken, refreshtoken, email, site, type, format, fields,
-          include_ansible):
+def query(ctx, actor, sliceid, sliverid, states, idtoken, refreshtoken, email, site, host, ip_subnet,
+          type, format, fields, include_ansible):
     """ Get sliver(s) from an actor
     """
     try:
@@ -268,7 +275,7 @@ def query(ctx, actor, sliceid, sliverid, states, idtoken, refreshtoken, email, s
                                       callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
                                       slice_id=sliceid, rid=sliverid, states=states, id_token=idtoken, email=email,
                                       site=site, type=type, format=format, fields=fields,
-                                      include_ansible=include_ansible)
+                                      include_ansible=include_ansible, host=host, ip_subnet=ip_subnet)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
@@ -386,7 +393,7 @@ def close(ctx, did, actor, idtoken, refreshtoken):
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
 def remove(ctx, did, actor, idtoken, refreshtoken):
-    """ Removes sliver for an actor
+    """ Removes delegations for an actor
     """
     try:
         idtoken = KafkaProcessorSingleton.get().start(id_token=idtoken, refresh_token=refreshtoken, ignore_tokens=True)
