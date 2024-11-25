@@ -66,20 +66,86 @@ class ShowCommand(Command):
 
     def get_reservations(self, *, actor_name: str, callback_topic: str, slice_id: str, rid: str,
                          states: str, id_token: str, email: str, site: str, type: str, format: str, fields: str,
-                         include_ansible: bool, host: str, ip_subnet: str):
+                         include_ansible: bool, host: str, ip_subnet: str, slice_id_file: str, output_file: str):
         try:
-            reservations, error = self.do_get_reservations(actor_name=actor_name, callback_topic=callback_topic,
-                                                           slice_id=slice_id, rid=rid, states=states, id_token=id_token,
-                                                           email=email, site=site, type=type, host=host, ip_subnet=ip_subnet)
-            if reservations is not None and len(reservations) > 0:
-                self.__print_reservations(reservations=reservations, format=format, fields=fields,
-                                          include_ansible=include_ansible)
+            # Determine query input (slice_id, slice_id_file, or sliverid)
+            if slice_id_file:
+                # Read slice IDs from file
+                try:
+                    with open(slice_id_file, 'r') as f:
+                        slice_ids = [line.strip() for line in f if line.strip()]
+                except Exception as e:
+                    self.logger.error(f"Error reading slice ID file: {e}")
+                    print(f"Error reading slice ID file: {e}")
+                    return
+            elif slice_id:
+                # Use single slice ID if provided
+                slice_ids = [slice_id]
+            elif rid:
+                # Use sliverid directly if no slice_id or slice_id_file is provided
+                slice_ids = []  # Slice IDs not used when querying by sliver ID
             else:
-                print("Status: {}".format(error.get_status()))
+                print("Error: No slice_id, slice_id_file, or sliverid (rid) specified.")
+                return
+
+            # Prepare for output redirection
+            output = []
+            if slice_ids:
+                # Query for each slice ID
+                for sid in slice_ids:
+                    try:
+                        reservations, error = self.do_get_reservations(actor_name=actor_name,
+                                                                       callback_topic=callback_topic,
+                                                                       slice_id=sid, rid=None, states=states,
+                                                                       id_token=id_token,
+                                                                       email=email, site=site, type=type, host=host,
+                                                                       ip_subnet=ip_subnet)
+                        if reservations is not None and len(reservations) > 0:
+                            result = self.__print_reservations(reservations=reservations, format=format, fields=fields,
+                                                               include_ansible=include_ansible, return_as_string=True)
+                            output.append(result)
+                        else:
+                            output.append(f"Slice ID: {sid}, Status: {error.get_status()}\n")
+                    except Exception as e:
+                        ex_str = traceback.format_exc()
+                        self.logger.error(ex_str)
+                        output.append(f"Slice ID: {sid}, Exception occurred: {e}\n")
+            else:
+                # Query using sliverid (rid)
+                try:
+                    reservations, error = self.do_get_reservations(actor_name=actor_name, callback_topic=callback_topic,
+                                                                   slice_id=None, rid=rid, states=states,
+                                                                   id_token=id_token,
+                                                                   email=email, site=site, type=type, host=host,
+                                                                   ip_subnet=ip_subnet)
+                    if reservations is not None and len(reservations) > 0:
+                        result = self.__print_reservations(reservations=reservations, format=format, fields=fields,
+                                                           include_ansible=include_ansible, return_as_string=True)
+                        output.append(result)
+                    else:
+                        output.append(f"Sliver ID: {rid}, Status: {error.get_status()}\n")
+                except Exception as e:
+                    ex_str = traceback.format_exc()
+                    self.logger.error(ex_str)
+                    output.append(f"Sliver ID: {rid}, Exception occurred: {e}\n")
+
+            # Redirect output to a file if specified
+            if output_file:
+                try:
+                    with open(output_file, 'w') as f:
+                        f.writelines(output)
+                    print(f"Output written to {output_file}")
+                except Exception as e:
+                    self.logger.error(f"Error writing to output file: {e}")
+                    print(f"Error writing to output file: {e}")
+            else:
+                # Print output to the console
+                for line in output:
+                    print(line)
         except Exception as e:
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)
-            print("Exception occurred while processing get_reservations {}".format(e))
+            print(f"Exception occurred while processing get_reservations: {e}")
 
     def get_delegations(self, *, actor_name: str, callback_topic: str, slice_id: str, did: str, states: str,
                         id_token: str, format: str):
@@ -175,84 +241,120 @@ class ShowCommand(Command):
         return None, actor.get_last_error()
 
     @staticmethod
-    def __print_reservations_json(*, reservations: List[ReservationMng], fields: str):
+    def __print_reservations_json(*, reservations: List[ReservationMng], fields: str, return_as_string: bool = False):
+        """
+        Print or return reservations in JSON format.
+
+        Args:
+            reservations (List[ReservationMng]): List of reservation objects.
+            fields (str): Comma-separated list of fields to include.
+            return_as_string (bool): If True, return the output as a string. Otherwise, print it.
+        """
         res_list = []
         if fields is not None:
             field_list = fields.split(",")
         else:
             field_list = None
+
         for reservation in reservations:
             res_dict = {
-                'sliver_id': reservation.reservation_id,
-                'slice_id': reservation.slice_id
+                "sliver_id": reservation.reservation_id,
+                "slice_id": reservation.slice_id,
             }
-            if reservation.rtype is not None and (field_list is None or 'type' in field_list):
-                res_dict['type'] = reservation.rtype
+            if reservation.rtype is not None and (field_list is None or "type" in field_list):
+                res_dict["type"] = reservation.rtype
 
-            if reservation.rtype is not None and (field_list is None or 'notices' in field_list):
-                res_dict['notices'] = reservation.notices
+            if reservation.rtype is not None and (field_list is None or "notices" in field_list):
+                res_dict["notices"] = reservation.notices
 
-            if reservation.start is not None and (field_list is None or 'start' in field_list):
-                res_dict['start'] = ShowCommand.time_string(milliseconds=reservation.start)
+            if reservation.start is not None and (field_list is None or "start" in field_list):
+                res_dict["start"] = ShowCommand.time_string(milliseconds=reservation.start)
 
-            if reservation.end is not None and (field_list is None or 'end' in field_list):
-                res_dict['end'] = ShowCommand.time_string(milliseconds=reservation.end)
+            if reservation.end is not None and (field_list is None or "end" in field_list):
+                res_dict["end"] = ShowCommand.time_string(milliseconds=reservation.end)
 
-            if reservation.requested_end is not None and (field_list is None or 'requested_end' in field_list):
-                res_dict['requested_end'] = ShowCommand.time_string(milliseconds=reservation.requested_end)
+            if reservation.requested_end is not None and (field_list is None or "requested_end" in field_list):
+                res_dict["requested_end"] = ShowCommand.time_string(milliseconds=reservation.requested_end)
 
-            if reservation.units is not None and (field_list is None or 'units' in field_list):
-                res_dict['units'] = reservation.units
+            if reservation.units is not None and (field_list is None or "units" in field_list):
+                res_dict["units"] = reservation.units
 
-            if reservation.state is not None and (field_list is None or 'state' in field_list):
-                res_dict['state'] = reservation.state
+            if reservation.state is not None and (field_list is None or "state" in field_list):
+                res_dict["state"] = reservation.state
 
-            if reservation.pending_state is not None and (field_list is None or 'pending_state' in field_list):
-                res_dict['pending_state'] = reservation.pending_state
+            if reservation.pending_state is not None and (field_list is None or "pending_state" in field_list):
+                res_dict["pending_state"] = reservation.pending_state
 
             sliver = reservation.get_sliver()
-            if sliver is not None and (field_list is None or 'sliver' in field_list):
-                res_dict['sliver'] = ABCPropertyGraph.sliver_to_dict(sliver)
+            if sliver is not None and (field_list is None or "sliver" in field_list):
+                res_dict["sliver"] = ABCPropertyGraph.sliver_to_dict(sliver)
 
             res_list.append(res_dict)
 
-        print(json.dumps(res_list, indent=4))
+        json_output = json.dumps(res_list, indent=4)
+        if return_as_string:
+            return json_output
+        print(json_output)
 
     def __print_reservations(self, reservations: List[ReservationMng], format: str, fields: str,
-                             include_ansible: bool = False):
-        if format == 'text':
+                             include_ansible: bool = False, return_as_string: bool = False):
+        """
+        Print or return reservations based on the specified format.
+
+        Args:
+            reservations (List[ReservationMng]): List of reservation objects.
+            format (str): Output format ('text' or 'json').
+            fields (str): Comma-separated list of fields to include.
+            include_ansible (bool): Whether to include ansible commands (text format only).
+            return_as_string (bool): If True, return the output as a string. Otherwise, print it.
+        """
+        if format == "text":
+            result = []
             for r in reservations:
-                self.__print_reservation(reservation=r, include_ansible=include_ansible)
+                output = self.__print_reservation(reservation=r, include_ansible=include_ansible, return_as_string=True)
+                if return_as_string:
+                    result.append(output)
+                else:
+                    print(output)
+            if return_as_string:
+                return "\n".join(result)
         else:
-            self.__print_reservations_json(reservations=reservations, fields=fields)
+            return self.__print_reservations_json(reservations=reservations, fields=fields,
+                                                  return_as_string=return_as_string)
 
     @staticmethod
-    def __print_reservation(*, reservation: ReservationMng, include_ansible: bool):
+    def __print_reservation(*, reservation: ReservationMng, include_ansible: bool, return_as_string: bool = False):
         """
-        Prints ReservationMng
+        Print or return details of a single reservation.
+
+        Args:
+            reservation (ReservationMng): Reservation object to print.
+            include_ansible (bool): Whether to include ansible commands.
+            return_as_string (bool): If True, return the output as a string. Otherwise, print it.
         """
-        print("")
-        print(f"Reservation ID: {reservation.reservation_id} Slice ID: {reservation.slice_id}")
+        output = []
+        output.append("")
+        output.append(f"Reservation ID: {reservation.reservation_id} Slice ID: {reservation.slice_id}")
         if reservation.rtype is not None or reservation.notices is not None:
-            print(f"Resource Type: {reservation.rtype} Notices: {reservation.notices}")
+            output.append(f"Resource Type: {reservation.rtype} Notices: {reservation.notices}")
 
         if reservation.start is not None or reservation.end is not None or reservation.requested_end is not None:
-            print(f"Start: {ShowCommand.time_string(milliseconds=reservation.start)} "
+            output.append(f"Start: {ShowCommand.time_string(milliseconds=reservation.start)} "
                   f"End: {ShowCommand.time_string(milliseconds=reservation.end)} "
                   f"Requested End: {ShowCommand.time_string(milliseconds=reservation.requested_end)}")
 
         if reservation.units is not None or reservation.state is not None or reservation.pending_state is not None:
-            print(f"Units: {reservation.units} State: {ReservationStates(reservation.state)} "
+            output.append(f"Units: {reservation.units} State: {ReservationStates(reservation.state)} "
                   f"Pending State: {ReservationPendingStates(reservation.pending_state)}")
 
         if isinstance(reservation, LeaseReservationAvro) and reservation.redeem_processors is not None:
-            print(f"Predecessors")
+            output.append(f"Predecessors")
             for x in reservation.redeem_processors:
-                print(x.get_reservation_id())
+                output.append(x.get_reservation_id())
 
         sliver = reservation.get_sliver()
         if sliver is not None:
-            print(f"Sliver: {sliver_to_str(sliver=sliver)}")
+            output.append(f"Sliver: {sliver_to_str(sliver=sliver)}")
 
             if include_ansible and isinstance(sliver, NodeSliver):
                 from fabric_mgmt_cli.managecli.kafka_processor import KafkaProcessorSingleton
@@ -260,9 +362,9 @@ class ShowCommand(Command):
                 location = playbook_config.get("location")
                 inventory_path = playbook_config.get("inventory_location")
 
-                print()
-                print("Ansible commands to attach the PCI devices:")
-                print()
+                output.append("")
+                output.append("Ansible commands to attach the PCI devices:")
+                output.append("")
                 if sliver.attached_components_info is not None:
                     for component in sliver.attached_components_info.devices.values():
                         if component.get_type() == ComponentType.Storage:
@@ -330,9 +432,12 @@ class ShowCommand(Command):
                             for key, value in host_vars.items():
                                 device_info += f"{key}={value} "
                             #cmd += "'"
-                            print()
-                            print(f"{cmd} {device_info}'")
-        print("")
+                            output.append("")
+                            output.append(f"{cmd} {device_info}'")
+        result = "\n".join(output)
+        if return_as_string:
+            return result
+        print(result)
 
     @staticmethod
     def __print_node_sliver(*, sliver: NodeSliver):
