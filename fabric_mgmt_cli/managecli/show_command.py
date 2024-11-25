@@ -101,8 +101,7 @@ class ShowCommand(Command):
                 # Use sliverid directly if no slice_id or slice_id_file is provided
                 slice_ids = []  # Slice IDs not used when querying by sliver ID
             else:
-                print("Error: No slice_id, slice_id_file, or sliverid (rid) specified.")
-                return
+                slice_ids = None
 
             # Prepare for output redirection
             output = []
