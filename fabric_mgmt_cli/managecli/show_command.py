@@ -64,19 +64,35 @@ class ShowCommand(Command):
             self.logger.error(ex_str)
             print("Exception occurred while processing get_slices {}".format(e))
 
+    def parse_slice_ids_from_file(self, slice_id_file: str) -> list:
+        """
+        Reads slice IDs from a file and splits comma-separated values into individual slice IDs.
+
+        Args:
+            slice_id_file (str): Path to the file containing slice IDs.
+
+        Returns:
+            list: A list of slice IDs.
+        """
+        slice_ids = []
+        try:
+            with open(slice_id_file, "r") as f:
+                for line in f:
+                    # Split comma-separated slice IDs and strip whitespace
+                    slice_ids.extend([slice_id.strip() for slice_id in line.split(",") if slice_id.strip()])
+        except Exception as e:
+            print(f"Error reading slice ID file: {e}")
+        return slice_ids
+
     def get_reservations(self, *, actor_name: str, callback_topic: str, slice_id: str, rid: str,
                          states: str, id_token: str, email: str, site: str, type: str, format: str, fields: str,
                          include_ansible: bool, host: str, ip_subnet: str, slice_id_file: str, output_file: str):
         try:
             # Determine query input (slice_id, slice_id_file, or sliverid)
             if slice_id_file:
-                # Read slice IDs from file
-                try:
-                    with open(slice_id_file, 'r') as f:
-                        slice_ids = [line.strip() for line in f if line.strip()]
-                except Exception as e:
-                    self.logger.error(f"Error reading slice ID file: {e}")
-                    print(f"Error reading slice ID file: {e}")
+                slice_ids = self.parse_slice_ids_from_file(slice_id_file)
+                if not slice_ids:
+                    print(f"Error: No valid slice IDs found in {slice_id_file}")
                     return
             elif slice_id:
                 # Use single slice ID if provided
