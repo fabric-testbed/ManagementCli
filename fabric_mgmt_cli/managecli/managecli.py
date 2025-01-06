@@ -263,9 +263,11 @@ def remove(ctx, sliverid, actor, idtoken, refreshtoken, states):
 @click.option('--format', default='text', help='Output Format Type: text or json', required=False)
 @click.option('--fields', default=None, help='Comma separated list of fields to be displayed', required=False)
 @click.option('--include_ansible', default=None, help='Print ansible commands to attach components', required=False)
+@click.option('--slice_id_file', default=None, help='File containing the list of comma separated slice ids', required=False)
+@click.option('--output_file', default=None, help='Output file where the queried objects are written', required=False)
 @click.pass_context
 def query(ctx, actor, sliceid, sliverid, states, idtoken, refreshtoken, email, site, host, ip_subnet,
-          type, format, fields, include_ansible):
+          type, format, fields, include_ansible, slice_id_file, output_file):
     """ Get sliver(s) from an actor
     """
     try:
@@ -275,7 +277,8 @@ def query(ctx, actor, sliceid, sliverid, states, idtoken, refreshtoken, email, s
                                       callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
                                       slice_id=sliceid, rid=sliverid, states=states, id_token=idtoken, email=email,
                                       site=site, type=type, format=format, fields=fields,
-                                      include_ansible=include_ansible, host=host, ip_subnet=ip_subnet)
+                                      include_ansible=include_ansible, host=host, ip_subnet=ip_subnet,
+                                      slice_id_file=slice_id_file, output_file=output_file)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
