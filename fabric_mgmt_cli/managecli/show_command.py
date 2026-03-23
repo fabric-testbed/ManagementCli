@@ -66,14 +66,14 @@ class ShowCommand(Command):
 
     def get_reservations(self, *, actor_name: str, callback_topic: str, slice_id: str, rid: str,
                          states: str, id_token: str, email: str, site: str, type: str, format: str, fields: str,
-                         include_ansible: bool, host: str, ip_subnet: str):
+                         include_ansible: bool, include_vm_create: str = None, host: str, ip_subnet: str):
         try:
             reservations, error = self.do_get_reservations(actor_name=actor_name, callback_topic=callback_topic,
                                                            slice_id=slice_id, rid=rid, states=states, id_token=id_token,
                                                            email=email, site=site, type=type, host=host, ip_subnet=ip_subnet)
             if reservations is not None and len(reservations) > 0:
                 self.__print_reservations(reservations=reservations, format=format, fields=fields,
-                                          include_ansible=include_ansible)
+                                          include_ansible=include_ansible, include_vm_create=include_vm_create)
             else:
                 print("Status: {}".format(error.get_status()))
         except Exception as e:
@@ -201,6 +201,9 @@ class ShowCommand(Command):
             if reservation.requested_end is not None and (field_list is None or 'requested_end' in field_list):
                 res_dict['requested_end'] = ShowCommand.time_string(milliseconds=reservation.requested_end)
 
+            if reservation.closed_at is not None and (field_list is None or 'closed_at' in field_list):
+                res_dict['closed_at'] = ShowCommand.time_string(milliseconds=reservation.closed_at)
+
             if reservation.units is not None and (field_list is None or 'units' in field_list):
                 res_dict['units'] = reservation.units
 
@@ -219,15 +222,16 @@ class ShowCommand(Command):
         print(json.dumps(res_list, indent=4))
 
     def __print_reservations(self, reservations: List[ReservationMng], format: str, fields: str,
-                             include_ansible: bool = False):
+                             include_ansible: bool = False, include_vm_create: str = None):
         if format == 'text':
             for r in reservations:
-                self.__print_reservation(reservation=r, include_ansible=include_ansible)
+                self.__print_reservation(reservation=r, include_ansible=include_ansible,
+                                         include_vm_create=include_vm_create)
         else:
             self.__print_reservations_json(reservations=reservations, fields=fields)
 
     @staticmethod
-    def __print_reservation(*, reservation: ReservationMng, include_ansible: bool):
+    def __print_reservation(*, reservation: ReservationMng, include_ansible: bool, include_vm_create: str = None):
         """
         Prints ReservationMng
         """
@@ -244,6 +248,9 @@ class ShowCommand(Command):
         if reservation.units is not None or reservation.state is not None or reservation.pending_state is not None:
             print(f"Units: {reservation.units} State: {ReservationStates(reservation.state)} "
                   f"Pending State: {ReservationPendingStates(reservation.pending_state)}")
+
+        if reservation.closed_at is not None:
+            print(f"Closed At: {ShowCommand.time_string(milliseconds=reservation.closed_at)}")
 
         if isinstance(reservation, LeaseReservationAvro) and reservation.redeem_processors is not None:
             print(f"Predecessors")
@@ -332,6 +339,42 @@ class ShowCommand(Command):
                             #cmd += "'"
                             print()
                             print(f"{cmd} {device_info}'")
+
+            if include_vm_create and isinstance(sliver, NodeSliver):
+                import os
+                from fabric_mgmt_cli.managecli.kafka_processor import KafkaProcessorSingleton
+                playbook_config = KafkaProcessorSingleton.get().get_playbook_config()
+                location = playbook_config.get("location")
+                inventory_path = playbook_config.get("inventory_location")
+                vm_playbook = playbook_config.get("VM")
+                playbook_full_path = f"{location}/{vm_playbook}"
+
+                extra_vars = {
+                    "operation": "create",
+                    "vmname": f"{reservation.reservation_id}-{sliver.get_name()}",
+                    "hostname": sliver.get_name(),
+                    "image": sliver.get_image_ref(),
+                }
+
+                if sliver.label_allocations is not None and sliver.label_allocations.instance_parent is not None:
+                    extra_vars["availability_zone"] = f"nova:{sliver.label_allocations.instance_parent}"
+
+                if sliver.get_capacity_hints() is not None and sliver.get_capacity_hints().instance_type is not None:
+                    extra_vars["flavor"] = sliver.get_capacity_hints().instance_type
+
+                if sliver.management_ip is not None:
+                    extra_vars["fixed_ip"] = str(sliver.management_ip)
+
+                os.makedirs(include_vm_create, exist_ok=True)
+                json_filepath = os.path.join(include_vm_create, f"{reservation.reservation_id}_sliver_info.json")
+                with open(json_filepath, 'w') as f:
+                    json.dump(extra_vars, f, indent=4)
+
+                print()
+                print("Ansible command for VM creation:")
+                print()
+                print(f"ansible-playbook -i {inventory_path} {playbook_full_path} --extra-vars @{json_filepath}")
+
         print("")
 
     @staticmethod
