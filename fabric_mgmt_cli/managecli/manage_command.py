@@ -661,6 +661,7 @@ class ManageCommand(ShowCommand):
                                       second_allowed_states: list, third_allowed_states: list,
                                       first_name: str, second_name: str, third_name: str):
         flag = False
+        # Pass 1: iterate over first, check against second and third
         for sid, sliver in first.items():
             second_state = ReservationStates.Closed.value
             third_state = ReservationStates.Closed.value
@@ -677,12 +678,46 @@ class ManageCommand(ShowCommand):
                       f"type: {sliver.get_resource_type()} is inconsistent "
                       f"States: {ReservationStates(sliver.get_state())}/{first_name} "
                       f"{ReservationStates(second_state)}/{second_name} {ReservationStates(third_state)}/{third_name}")
-                      #f" with Start: {self.time_string(milliseconds=sliver.get_start())} "
-                      #f"End: {self.time_string(milliseconds=sliver.get_end())} "
-                      #f"Requested End: {self.time_string(milliseconds=sliver.get_requested_end())}")
                 flag = True
+
+        # Pass 2: iterate over second, find slivers not in first
+        for sid, sliver in second.items():
+            if sid in first:
+                continue
+            first_state = ReservationStates.Closed.value
+            third_state = ReservationStates.Closed.value
+            if sid in third:
+                third_state = third[sid].get_state()
+
+            if first_state in first_allowed_states and sliver.get_state() in second_allowed_states and \
+                    third_state in third_allowed_states:
+                continue
+            else:
+                print(f"Sliver: {sliver.get_reservation_id()} Slice: {sliver.get_slice_id()} of "
+                      f"type: {sliver.get_resource_type()} is inconsistent "
+                      f"States: {ReservationStates(first_state)}/{first_name} "
+                      f"{ReservationStates(sliver.get_state())}/{second_name} {ReservationStates(third_state)}/{third_name}")
+                flag = True
+
+        # Pass 3: iterate over third, find slivers not in first or second
+        for sid, sliver in third.items():
+            if sid in first or sid in second:
+                continue
+            first_state = ReservationStates.Closed.value
+            second_state = ReservationStates.Closed.value
+
+            if first_state in first_allowed_states and second_state in second_allowed_states and \
+                    sliver.get_state() in third_allowed_states:
+                continue
+            else:
+                print(f"Sliver: {sliver.get_reservation_id()} Slice: {sliver.get_slice_id()} of "
+                      f"type: {sliver.get_resource_type()} is inconsistent "
+                      f"States: {ReservationStates(first_state)}/{first_name} "
+                      f"{ReservationStates(second_state)}/{second_name} {ReservationStates(sliver.get_state())}/{third_name}")
+                flag = True
+
         if not flag:
-            print(f"No inconsistencies found between {first} {second} {third}!")
+            print(f"No inconsistencies found between {first_name} {second_name} {third_name}!")
 
     def do_audit(self, *, oc_name: str, br_name: str, am_name: str, site_name: str, slice_id: str,
                  sliver_id: str, callback_topic: str, sliver_type: str):
@@ -773,6 +808,80 @@ class ManageCommand(ShowCommand):
                                                first_name=am_name, second_name=br_name, third_name=oc_name)
         else:
             print(f"No inconsistencies found between {oc_name} {br_name} {am_name}!")
+
+    def do_audit_broker(self, *, oc_name: str, br_name: str, site_name: str, slice_id: str,
+                        sliver_id: str, callback_topic: str, sliver_type: str):
+        if oc_name is None or br_name is None:
+            raise Exception("Invalid arguments; must specify both --oc and --broker")
+
+        if sliver_type is None:
+            sliver_type = f"{NodeType.VM}"
+
+        states = "ticketed, activeticketed, active, failed"
+
+        oc_slivers, error = self.do_get_reservations(actor_name=oc_name, site=site_name,
+                                                      slice_id=slice_id, rid=sliver_id,
+                                                      callback_topic=callback_topic,
+                                                      type=sliver_type, states=states)
+        if oc_slivers is None:
+            oc_slivers = []
+            if error.get_status().get_code() != 0:
+                print("Status: {}".format(error.get_status()))
+
+        br_slivers, error = self.do_get_reservations(actor_name=br_name, site=site_name,
+                                                      slice_id=slice_id, rid=sliver_id,
+                                                      callback_topic=callback_topic,
+                                                      type=sliver_type, states=states)
+        if br_slivers is None:
+            br_slivers = []
+            if error.get_status().get_code() != 0:
+                print("Status: {}".format(error.get_status()))
+
+        oc_dict = {s.get_reservation_id(): s for s in oc_slivers}
+        br_dict = {s.get_reservation_id(): s for s in br_slivers}
+
+        leaks = 0
+        orphans = 0
+
+        # Broker leaks: slivers in broker but not in OC (or Closed on OC)
+        for sid, sliver in br_dict.items():
+            if sid not in oc_dict:
+                print(f"BROKER LEAK: Sliver {sid} Slice: {sliver.get_slice_id()} "
+                      f"Type: {sliver.get_resource_type()} "
+                      f"State: {ReservationStates(sliver.get_state())}/{br_name} "
+                      f"-- missing from {oc_name}")
+                leaks += 1
+            else:
+                oc_state = oc_dict[sid].get_state()
+                if oc_state == ReservationStates.Closed.value:
+                    print(f"BROKER LEAK: Sliver {sid} Slice: {sliver.get_slice_id()} "
+                          f"Type: {sliver.get_resource_type()} "
+                          f"State: {ReservationStates(sliver.get_state())}/{br_name} "
+                          f"but {ReservationStates(oc_state)}/{oc_name}")
+                    leaks += 1
+
+        # OC orphans: slivers in OC but not in broker (or Closed on broker)
+        for sid, sliver in oc_dict.items():
+            if sid not in br_dict:
+                print(f"OC ORPHAN: Sliver {sid} Slice: {sliver.get_slice_id()} "
+                      f"Type: {sliver.get_resource_type()} "
+                      f"State: {ReservationStates(sliver.get_state())}/{oc_name} "
+                      f"-- missing from {br_name}")
+                orphans += 1
+            else:
+                br_state = br_dict[sid].get_state()
+                if br_state == ReservationStates.Closed.value:
+                    print(f"OC ORPHAN: Sliver {sid} Slice: {sliver.get_slice_id()} "
+                          f"Type: {sliver.get_resource_type()} "
+                          f"State: {ReservationStates(sliver.get_state())}/{oc_name} "
+                          f"but {ReservationStates(br_state)}/{br_name}")
+                    orphans += 1
+
+        print(f"\n--- Audit Broker Summary ---")
+        print(f"OC ({oc_name}) slivers: {len(oc_slivers)}")
+        print(f"Broker ({br_name}) slivers: {len(br_slivers)}")
+        print(f"Broker leaks found: {leaks}")
+        print(f"OC orphans found: {orphans}")
 
     @staticmethod
     def extract_guid(*, string):

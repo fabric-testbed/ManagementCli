@@ -263,9 +263,10 @@ def remove(ctx, sliverid, actor, idtoken, refreshtoken, states):
 @click.option('--format', default='text', help='Output Format Type: text or json', required=False)
 @click.option('--fields', default=None, help='Comma separated list of fields to be displayed', required=False)
 @click.option('--include_ansible', default=None, help='Print ansible commands to attach components', required=False)
+@click.option('--include_vm_create', default=None, help='Directory path to write VM creation sliver info JSON files and print ansible commands', required=False)
 @click.pass_context
 def query(ctx, actor, sliceid, sliverid, states, idtoken, refreshtoken, email, site, host, ip_subnet,
-          type, format, fields, include_ansible):
+          type, format, fields, include_ansible, include_vm_create):
     """ Get sliver(s) from an actor
     """
     try:
@@ -275,7 +276,8 @@ def query(ctx, actor, sliceid, sliverid, states, idtoken, refreshtoken, email, s
                                       callback_topic=KafkaProcessorSingleton.get().get_callback_topic(),
                                       slice_id=sliceid, rid=sliverid, states=states, id_token=idtoken, email=email,
                                       site=site, type=type, format=format, fields=fields,
-                                      include_ansible=include_ansible, host=host, ip_subnet=ip_subnet)
+                                      include_ansible=include_ansible, include_vm_create=include_vm_create,
+                                      host=host, ip_subnet=ip_subnet)
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         # traceback.print_exc()
@@ -546,6 +548,33 @@ def audit(ctx, oc: str, broker: str, am: str, sliceid: str, sliverid: str, site:
         mgmt_command.do_audit(oc_name=oc, br_name=broker, am_name=am, slice_id=sliceid,
                               sliver_id=sliverid, site_name=site, sliver_type=type,
                               callback_topic=KafkaProcessorSingleton.get().get_callback_topic())
+        KafkaProcessorSingleton.get().stop()
+    except Exception as e:
+        traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
+
+
+@maintenance.command()
+@click.option('--oc', help='Orchestrator Name', required=True)
+@click.option('--broker', help='Broker Name', required=True)
+@click.option('--sliceid', help='Slice Id', required=False)
+@click.option('--sliverid', help='Sliver Id', required=False)
+@click.option('--site', help='Site Name', required=False)
+@click.option('--type', default=None,
+              help='Sliver Type, possible allowed values: '
+                   '[VM, L2Bridge, L2STS, L2PTP, FABNetv4, FABNetv6, FABNetv4Ext, '
+                   'FABNetv6Ext, PortMirror, Facility, L3VPN]',
+              required=False)
+@click.pass_context
+def audit_broker(ctx, oc: str, broker: str, sliceid: str, sliverid: str, site: str, type: str):
+    """ Audit OC vs Broker sliver state, detect broker leaks and OC orphans.
+    """
+    try:
+        KafkaProcessorSingleton.get().start(ignore_tokens=True)
+        mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
+        mgmt_command.do_audit_broker(oc_name=oc, br_name=broker, slice_id=sliceid,
+                                     sliver_id=sliverid, site_name=site, sliver_type=type,
+                                     callback_topic=KafkaProcessorSingleton.get().get_callback_topic())
         KafkaProcessorSingleton.get().stop()
     except Exception as e:
         traceback.print_exc()
