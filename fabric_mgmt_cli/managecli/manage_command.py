@@ -1090,11 +1090,11 @@ class ManageCommand(ShowCommand):
         if new_end_time <= now:
             raise Exception(f"New term end time {new_end_time} is in the past! ")
 
-        if (new_end_time - now) > Constants.DEFAULT_MAX_DURATION:
+        if (new_end_time - now) > Constants.DEFAULT_MAX_DURATION_IN_WEEKS:
             self.logger.info(f"New term end time {new_end_time} exceeds system default "
-                             f"{Constants.DEFAULT_MAX_DURATION}, setting to system default: ")
+                             f"{Constants.DEFAULT_MAX_DURATION_IN_WEEKS}, setting to system default: ")
 
-            new_end_time = now + Constants.DEFAULT_MAX_DURATION
+            new_end_time = now + Constants.DEFAULT_MAX_DURATION_IN_WEEKS
 
         return new_end_time
 
