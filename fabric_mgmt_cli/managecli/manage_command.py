@@ -1021,6 +1021,55 @@ class ManageCommand(ShowCommand):
                   f" is inconsistent (cf_state/if_state): ({sliver_state}/Not Provisioned)"
             print(msg)
 
+    def do_extend_reservation(self, *, rid: str, actor_name: str, callback_topic: str,
+                              end_time: str) -> Tuple[bool, Error]:
+        """
+        Extend reservation by invoking Management Actor Extend reservation API
+        @param rid reservation id
+        @param actor_name actor name
+        @param callback_topic callback topic
+        @param end_time new end time
+        @return Tuple[bool, Error] indicating success or failure status and error containing failure details
+        """
+        actor = self.get_actor(actor_name=actor_name)
+        if actor is None:
+            raise Exception(f"Invalid arguments actor_name {actor_name} not found")
+
+        new_end_time = self.__validate_lease_end_time(lease_end_time=end_time)
+
+        try:
+            actor.prepare(callback_topic=callback_topic)
+            result = actor.extend_reservation(reservation=ID(uid=rid),
+                                              new_end_time=new_end_time,
+                                              sliver=None)
+            return result, actor.get_last_error()
+        except Exception as e:
+            self.logger.error(f"Exception occurred e: {e}")
+            self.logger.error(traceback.format_exc())
+
+        return False, actor.get_last_error()
+
+    def extend_reservation(self, *, rid: str, actor_name: str, callback_topic: str, end_time: str):
+        """
+        Extend reservation
+        @param rid reservation id
+        @param actor_name actor name
+        @param callback_topic callback topic
+        @param end_time new end time
+        """
+        try:
+            result, error = self.do_extend_reservation(rid=rid, actor_name=actor_name,
+                                                       callback_topic=callback_topic, end_time=end_time)
+            if result:
+                print(f"Sliver {rid} extended successfully!")
+            else:
+                print(f"Failed to extend sliver: {rid}")
+                self.print_result(status=error.get_status())
+        except Exception as e:
+            self.logger.error(f"Exception occurred e: {e}")
+            self.logger.error(traceback.format_exc())
+            print(f"Failed to extend sliver: {rid} error: {e}")
+
     def __validate_lease_end_time(self, lease_end_time: str) -> datetime:
         """
         Validate Lease End Time

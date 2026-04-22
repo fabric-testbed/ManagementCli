@@ -201,6 +201,31 @@ def slivers(ctx):
 @slivers.command()
 @click.option('--sliverid', help='Sliver Id', required=True)
 @click.option('--actor', help='Actor Name', required=True)
+@click.option('--endtime', help='Number of Days to extend', required=True)
+@click.pass_context
+def extend(ctx, sliverid, actor, endtime):
+    """ Extends sliver for an actor
+    """
+    try:
+        from datetime import datetime
+        from datetime import timezone
+        from datetime import timedelta
+
+        end_date = (datetime.now(timezone.utc) + timedelta(days=int(endtime))).strftime("%Y-%m-%d %H:%M:%S %z")
+
+        KafkaProcessorSingleton.get().start(ignore_tokens=True)
+        mgmt_command = ManageCommand(logger=KafkaProcessorSingleton.get().logger)
+        mgmt_command.extend_reservation(rid=sliverid, actor_name=actor, end_time=end_date,
+                                        callback_topic=KafkaProcessorSingleton.get().get_callback_topic())
+        KafkaProcessorSingleton.get().stop()
+    except Exception as e:
+        # traceback.print_exc()
+        click.echo('Error occurred: {}'.format(e))
+
+
+@slivers.command()
+@click.option('--sliverid', help='Sliver Id', required=True)
+@click.option('--actor', help='Actor Name', required=True)
 @click.option('--idtoken', default=None, help='Fabric Identity Token', required=False)
 @click.option('--refreshtoken', default=None, help='Fabric Refresh Token', required=False)
 @click.pass_context
